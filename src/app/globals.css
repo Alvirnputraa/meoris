@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  /* Default page background */
+  background: #ffffff;
+}
+
+/* Split background for section 1 (50% gray, 50% white) */
+.split-bg {
+  background: linear-gradient(
+    to right,
+    #f3f4f6 0%,
+    #f3f4f6 50%,
+    #ffffff 50%,
+    #ffffff 100%
+  );
+}
+
+/* On small screens, keep split horizontal: left gray, right white */
+@media (max-width: 767px) {
+  .split-bg {
+    background: linear-gradient(
+      to right,
+      #f3f4f6 0%,
+      #f3f4f6 50%,
+      #ffffff 50%,
+      #ffffff 100%
+    );
+  }
+}
+
+/* Utility classes to use local fonts loaded via next/font/local */
+.font-heading {
+  font-family: var(--font-heading), var(--font-geist-sans), system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+}
+
+.font-body {
+  font-family: var(--font-body), var(--font-geist-sans), system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+}
+
+/* Animated line above heading: reveals from right to left in 4s */
+@keyframes reveal-right-to-left {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.line-reveal {
+  transform-origin: right center;
+  transform: scaleX(0);
+  animation: reveal-right-to-left 3s ease forwards;
+}
+
+/* Animated line from left to right in 4s */
+@keyframes reveal-left-to-right {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.line-reveal-ltr {
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation: reveal-left-to-right 3s ease forwards;
+}
+
+/* Switch reveal animations for text and images */
+@keyframes fadeSlideUp {
+  0% { opacity: 0; transform: translateY(12px) scale(0.98); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes softFadeIn {
+  0% { opacity: 0; transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Apply to heading spans, paragraph, and button on switch */
+.reveal-switch {
+  animation: fadeSlideUp 700ms cubic-bezier(.22,1,.36,1) both;
+}
+
+/* Apply to images/blocks for soft crossfade */
+.fade-switch {
+  animation: softFadeIn 700ms ease both;
+}
+
+/* Stagger helpers */
+.reveal-delay-1 { animation-delay: 120ms; }
+.reveal-delay-2 { animation-delay: 240ms; }
+.reveal-delay-3 { animation-delay: 360ms; }
+
+/* Exit animation: slide up and fade out */
+@keyframes fadeSlideUpOut {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-12px) scale(0.98); }
+}
+
+.exit-switch {
+  animation: fadeSlideUpOut 500ms cubic-bezier(.22,1,.36,1) both;
+}
+
+/* Vertical slide viewport/track */
+.slide-viewport {
+  overflow: hidden;
+  position: relative;
+}
+.slide-track {
+  display: flex;
+  flex-direction: column;
+  transition: transform 700ms cubic-bezier(.22,1,.36,1);
+  will-change: transform;
+  transform: translateY(0);
+}
+.slide-track.slide-up {
+  transform: translateY(-50%);
+}
+
+/* Scroll reveal for section cards */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 1500ms cubic-bezier(.22,1,.36,1), transform 1500ms cubic-bezier(.22,1,.36,1);
+}
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Split background with 20% gray on left (for Section 3) */
+.split-left-20 {
+  /* Mobile default: no gray strip */
+  background: #ffffff;
+}
+
+@media (min-width: 768px) {
+  .split-left-20 {
+    background: linear-gradient(
+      to right,
+      #f3f4f6 0%,
+      #f3f4f6 20%,
+      #ffffff 20%,
+      #ffffff 100%
+    );
+  }
+}
+
+/* Section 3: show sidebar/layout only on very wide screens to keep grid centered */
+.section3-layout { display: block; }
+@media (min-width: 1800px) {
+  .section3-layout {
+    display: grid;
+    grid-template-columns: 0.2fr 0.8fr;
+    column-gap: 2rem;
+    align-items: start;
+  }
+}
+.section3-sidebar { display: none; }
+@media (min-width: 1800px) {
+  .section3-sidebar { display: block; }
+}
