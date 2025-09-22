@@ -1,18 +1,13 @@
 "use client";
-import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { useAuth } from '@/lib/auth-context'
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { useCart } from '@/lib/useCart'
 import { useFavorites } from '@/lib/useFavorites'
-import { useEffect, useState as useStateReact } from 'react'
 import { keranjangDb } from '@/lib/database'
 
-export default function MyAccountPage() {
-  const { user, logout } = useAuth()
-  const sp = useSearchParams()
-  const tab = ((sp?.get('tab') || 'detail') as 'detail' | 'alamat')
+export default function OrderDetailPage({ params }: { params: { orderId: string } }) {
+  const { orderId } = params
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -48,10 +43,10 @@ export default function MyAccountPage() {
   }, [cartItems])
 
   useEffect(() => {
-    if (isCartOpen && user) {
+    if (isCartOpen) {
       refresh()
     }
-  }, [isCartOpen, user, refresh])
+  }, [isCartOpen, refresh])
 
   const handleRemoveCartItem = async (itemId: string) => {
     try {
@@ -67,78 +62,37 @@ export default function MyAccountPage() {
     }
   }
 
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await logout()
-      // Redirect to home page after logout
-      window.location.href = '/'
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
-  }
-  // If user is not logged in, redirect to login
-  if (!user) {
-    return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="font-heading text-2xl text-black mb-4">Akses Ditolak</h1>
-          <p className="text-gray-600 mb-6">Anda harus login terlebih dahulu untuk mengakses halaman ini.</p>
-          <Link href="/login" className="inline-flex items-center gap-2 rounded-md bg-black text-white px-5 py-3 hover:opacity-90 transition">
-            Login
-          </Link>
-        </div>
-      </main>
-    )
-  }
-
   return (
     <main>
+      {/* Left sidebar (menu) */}
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[70]">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setIsSidebarOpen(false)}
-            aria-hidden="true"
-          />
+          <div className="absolute inset-0 bg-black/40" onClick={() => setIsSidebarOpen(false)} aria-hidden="true" />
           <aside className="absolute left-0 top-0 h-full w-80 max-w-[85%] bg-white shadow-2xl p-6">
             <div className="mt-6 md:mt-8 flex items-center justify-between">
               <span className="font-heading text-3xl md:text-4xl font-bold text-black">MEORIS</span>
-              <button
-                type="button"
-                aria-label="Tutup menu"
-                className="p-2 rounded hover:opacity-80 text-black cursor-pointer"
-                onClick={() => setIsSidebarOpen(false)}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+              <button type="button" aria-label="Tutup menu" className="p-2 rounded hover:opacity-80 text-black cursor-pointer" onClick={() => setIsSidebarOpen(false)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             </div>
             <nav className="mt-10 md:mt-12">
               <ul className="space-y-5 font-body text-gray-800">
                 <li>
-                  <a href="/#produk" className="flex items-center justify-between text-black hover:underline">
+                  <Link href="/produk" onClick={() => setIsSidebarOpen(false)} className="flex items-center justify-between text-black hover:underline">
                     <span className="font-heading text-base">Produk</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </a>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/my-account" className="flex items-center justify-between text-black hover:underline" onClick={() => setIsSidebarOpen(false)}>
+                    <span className="font-heading text-base">Informasi Akun</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </Link>
                 </li>
                 <li>
                   <a href="#" className="flex items-center justify-between text-black hover:underline">
-                    <span className="font-heading text-base">Informasi Akun</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </a>
-                </li>
-                <li>
-                  <a href="/produk/pesanan" className="flex items-center justify-between text-black hover:underline">
                     <span>History Pesanan</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </a>
                 </li>
               </ul>
@@ -146,6 +100,8 @@ export default function MyAccountPage() {
           </aside>
         </div>
       )}
+
+      {/* Right panels: Search, Cart, Favorite */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[70]">
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsSearchOpen(false)} aria-hidden="true" />
@@ -160,20 +116,6 @@ export default function MyAccountPage() {
               <input type="text" placeholder="Cari produk" className="w-full rounded-none border border-gray-300 px-4 py-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
               <div className="mt-3">
                 <button className="w-full rounded-none bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition">Cari</button>
-              </div>
-            </div>
-            <div className="mt-6">
-              <p className="font-heading text-black">Hasil pencarian</p>
-            </div>
-            <div className="mt-4 flex-1 overflow-y-auto space-y-5">
-              <div className="flex items-center gap-4">
-                <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
-                  <Image src="/images/test1p.png" alt="Hasil produk" fill sizes="64px" className="object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-gray-900 truncate">Nama Produk Contoh</p>
-                  <p className="font-body text-sm text-gray-700 mt-1">Rp 250.000</p>
-                </div>
               </div>
             </div>
           </aside>
@@ -329,11 +271,12 @@ export default function MyAccountPage() {
           </aside>
         </div>
       )}
-      {/* Top header (same style as homepage header) */}
+
+      {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-5">
           <div className="flex items-center gap-2">
-            <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-pointer" onClick={() => setIsSidebarOpen(true)}>
+            <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black" onClick={() => setIsSidebarOpen(true)}>
               <Image src="/images/sidebar.png" alt="Menu" width={34} height={34} />
             </button>
             <Link href="/" aria-label="Meoris beranda" className="select-none">
@@ -358,187 +301,107 @@ export default function MyAccountPage() {
           </div>
         </div>
       </div>
-      {/* Hero with title + breadcrumb */}
+
+      {/* Section 1: breadcrumb & title */}
       <section className="relative overflow-hidden bg-transparent">
-        {/* Background image with fixed effect */}
         <div
-          className="absolute inset-0 -z-10 bg-center bg-cover bg-fixed"
+          className="absolute inset-0 -z-10 bg-center bg-cover"
           aria-hidden="true"
-          style={{ backgroundImage: 'url(/images/bgg1.png)' }}
+          style={{ backgroundImage: 'url(/images/bg22.png)' }}
         />
-        <div className="max-w-7xl mx-auto px-6 md:px-8 py-10 md:py-14 min-h-[24vh] md:min-h-[30vh] flex flex-col items-center justify-center">
-          <h1 className="font-heading text-3xl md:text-4xl text-black text-center">Akun Saya</h1>
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-600 font-body">
-            <Link href="/" className="hover:underline">Beranda</Link>
-            <span>&gt;</span>
-            <span className="text-black">Detail Akun</span>
+        <div className="max-w-7xl mx-auto px-6 md:px-8 py-12 md:py-16 flex flex-col items-center justify-center text-gray-100">
+          <h1 className="font-heading text-3xl md:text-4xl text-gray-100">Detail &amp; Pengiriman</h1>
+          <div className="mt-3 font-body text-sm text-gray-100">
+            <span>Produk</span>
+            <span className="mx-1">&gt;</span>
+            <span>Pesanan</span>
+            <span className="mx-1">&gt;</span>
+            <span className="text-gray-100">{orderId}</span>
           </div>
         </div>
       </section>
-      
 
-      {/* Dashboard layout */}
-      <section className="bg-white py-10 md:py-14">
-        <div className="max-w-7xl mx-auto px-6 md:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-8">
-            {/* Sidebar */}
-            <aside>
-              <ul className="border border-gray-200 divide-y divide-gray-200">
-                <li>
-                  <Link
-                    href="/my-account?tab=detail"
-                    className={`block px-4 py-3 font-body ${tab === 'detail' ? 'bg-black text-white' : 'text-gray-800 hover:bg-gray-50'}`}
-                    aria-current={tab === 'detail' ? 'page' : undefined}
-                  >
-                    Detail Akun
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/my-account?tab=alamat"
-                    className={`block px-4 py-3 font-body ${tab === 'alamat' ? 'bg-black text-white' : 'text-gray-800 hover:bg-gray-50'}`}
-                    aria-current={tab === 'alamat' ? 'page' : undefined}
-                  >
-                    Alamat
-                  </Link>
-                </li>
-                <li>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-3 font-body text-gray-800 hover:bg-gray-50"
-                  >
-                    Logout
+      {/* Section 2: order details */}
+      <section className="bg-white py-8 md:py-14">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-4 md:space-y-6">
+          <p className="font-body text-gray-800">
+            Pesanan <span className="font-semibold">#{orderId}</span> dibuat pada <span className="font-semibold">19 September 2025</span> dan status saat ini
+            <span className="font-semibold"> Diproses</span>.
+          </p>
+
+          {/* Resi Pengiriman */}
+          <div className="space-y-2 md:space-y-3">
+            <h2 className="font-heading text-lg md:text-2xl text-black">Resi Pengiriman</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+              {/* Ekspedisi */}
+              <div className="border border-gray-300">
+                <div className="bg-gray-100 px-3 md:px-4 py-1.5 md:py-2 font-heading text-gray-900">Ekspedisi</div>
+                <div className="px-3 md:px-4 py-2 md:py-3 font-body text-gray-800 text-sm flex items-center gap-2">
+                  <Image src="/images/j&t.png" alt="J&T" width={20} height={20} />
+                  <span>J&amp;T Express</span>
+                </div>
+              </div>
+              {/* Nomor Resi */}
+              <div className="border border-gray-300">
+                <div className="bg-gray-100 px-3 md:px-4 py-1.5 md:py-2 font-heading text-gray-900">Nomor Resi</div>
+                <div className="px-3 md:px-4 py-2 md:py-3 font-body text-gray-800 text-sm flex items-center justify-between gap-3">
+                  <span className="select-all">83473847363</span>
+                  <button type="button" aria-label="Salin nomor resi" className="p-1.5 md:p-2 rounded hover:bg-gray-100 text-black" onClick={() => { try { navigator.clipboard.writeText('83473847363'); } catch {} }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 9h10v11H9z" stroke="currentColor" strokeWidth="2"/><path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="2"/></svg>
                   </button>
-                </li>
-              </ul>
-            </aside>
+                </div>
+              </div>
+              {/* Lacak */}
+              <div className="border border-gray-300">
+                <div className="bg-gray-100 px-3 md:px-4 py-1.5 md:py-2 font-heading text-gray-900">Lacak</div>
+                <div className="px-3 md:px-4 py-2 md:py-3 font-body text-gray-800">
+                  <button type="button" className="w-full rounded-none bg-black text-white px-4 py-2 text-xs md:text-sm hover:opacity-90">Lacak Pengiriman</button>
+                </div>
+              </div>
+            </div>
+          </div>
 
-            {/* Content */}
-            <div>
-              {tab === 'alamat' ? (
-                <>
-                  <h2 className="font-heading text-2xl md:text-3xl text-black">Alamat</h2>
-                  <div className="mt-6 max-w-3xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-5">
-                        {/* Nama Penerima */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Nama Penerima</label>
-                          <div className="relative">
-                            <input type="text" defaultValue="Budi Santoso" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
-                        {/* Nomor HP */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Nomor HP</label>
-                          <div className="relative">
-                            <input type="tel" defaultValue="081234567890" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.09 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.32 1.78.59 2.63a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.45-1.16a2 2 0 0 1 2.11-.45c.85.27 1.73.47 2.63.59A2 2 0 0 1 22 16.92z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
-                        {/* Nama Jalan */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Nama Jalan, gedung, nomor rumah</label>
-                          <div className="relative">
-                            <input type="text" defaultValue="Jl. Melati No. 123, RT 01/RW 02" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
-                        {/* Kecamatan/Desa */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Kecamatan/Desa</label>
-                          <div className="relative">
-                            <input type="text" defaultValue="Kec. Setiabudi / Desa Mekar" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-5">
-                        {/* Provinsi */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Provinsi</label>
-                          <div className="relative">
-                            <input type="text" defaultValue="Jawa Barat" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
-                        {/* Postal code */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Postal Code</label>
-                          <div className="relative">
-                            <input type="text" defaultValue="40123" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
-                        {/* Negara */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Negara</label>
-                          <input type="text" defaultValue="Indonesia" className="w-full rounded-md border border-gray-300 px-4 py-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="pt-4">
-                      <button className="inline-flex items-center gap-2 rounded-md bg-black text-white px-5 py-3">Save</button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h2 className="font-heading text-2xl md:text-3xl text-black">Detail Akun</h2>
-                  <div className="mt-6 space-y-5 max-w-xl">
-                    {/* Nama */}
-                    <div>
-                      <label className="block font-body text-sm text-gray-700 mb-1">Nama</label>
-                      <div className="relative">
-                        <input type="text" defaultValue={user.nama} className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                        <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                        </span>
-                      </div>
-                    </div>
-                    {/* Email */}
-                    <div>
-                      <label className="block font-body text-sm text-gray-700 mb-1">Email</label>
-                      <div className="relative">
-                        <input type="email" defaultValue={user.email} className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                        <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                        </span>
-                      </div>
-                    </div>
-                    {/* Password */}
-                    <div>
-                      <label className="block font-body text-sm text-gray-700 mb-1">Password</label>
-                      <div className="relative">
-                        <input type="password" defaultValue="********" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                        <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="pt-2">
-                      <button className="inline-flex items-center gap-2 rounded-md bg-black text-white px-5 py-3">Save</button>
-                    </div>
-                  </div>
-                </>
-              )}
+          <h2 className="font-heading text-lg md:text-2xl text-black">Detail Pesanan</h2>
+
+          <div className="border border-gray-300">
+            <div className="grid grid-cols-2 bg-gray-100 px-3 md:px-4 py-2 md:py-3 font-heading text-gray-900 text-sm md:text-base">
+              <span>Produk</span>
+              <span className="text-right">Total</span>
+            </div>
+            <div className="px-3 md:px-4 py-2 md:py-3 font-body text-gray-800 text-sm md:text-base">
+              <div className="flex items-center justify-between">
+                <span className="truncate">Daily Cream × 1</span>
+                <span>$40.00</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 border-t border-gray-300 text-sm md:text-base">
+              <div className="px-3 md:px-4 py-2 md:py-3 border-r border-gray-300 font-body text-gray-800">Subtotal:</div>
+              <div className="px-3 md:px-4 py-2 md:py-3 font-body text-gray-800">$40.00</div>
+              <div className="px-3 md:px-4 py-2 md:py-3 border-r border-gray-300 font-body text-gray-800">Metode pembayaran:</div>
+              <div className="px-3 md:px-4 py-2 md:py-3 font-body text-gray-800">Bayar di tempat</div>
+              <div className="px-3 md:px-4 py-2 md:py-3 border-r border-gray-300 font-body text-gray-800">Total:</div>
+              <div className="px-3 md:px-4 py-2 md:py-3 font-body text-gray-800">$40.00</div>
+              <div className="px-3 md:px-4 py-2 md:py-3 border-r border-gray-300 font-body text-gray-800">Catatan:</div>
+              <div className="px-3 md:px-4 py-2 md:py-3 font-body text-gray-800">af</div>
+            </div>
+          </div>
+
+          <h2 className="font-heading text-lg md:text-2xl text-black">Alamat Pengiriman</h2>
+          <div className="border border-gray-300 p-4 md:p-5">
+            <div className="font-body text-gray-800 text-sm md:text-base space-y-1">
+              <div>wtwt wf3w3g</div>
+              <div>wwfwf</div>
+              <div>af</div>
+              <div>Jawa Barat</div>
+              <div>24243</div>
+              <div>Indonesia</div>
+              <div className="flex items-center gap-2 mt-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.09 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.32 1.78.59 2.63a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.45-1.16a2 2 0 0 1 2.11-.45c.85.27 1.73.47 2.63.59A2 2 0 0 1 22 16.92z" fill="currentColor"/></svg> 2323232323</div>
+              <div className="flex items-center gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm16 2l-8 5-8-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> adminn@erdanpee.com</div>
             </div>
           </div>
         </div>
       </section>
+
       {/* Footer (four-column) at bottom */}
       <footer className="bg-white py-14 md:py-16">
         <div className="max-w-7xl mx-auto px-6 md:px-8">
@@ -559,7 +422,7 @@ export default function MyAccountPage() {
                   <span>+6289695971729</span>
                 </li>
                 <li className="grid grid-cols-[20px_1fr] md:grid-cols-[28px_1fr] items-center gap-3">
-                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-black w-5 h-5 md:w-6 md:h-6"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm16 2l-8 5-8-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-black w-5 h-5 md:w-6 md:h-6"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm16 2l-8 5-8-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   <span>info@meoris.erdanpee.com</span>
                 </li>
               </ul>
@@ -602,5 +465,4 @@ export default function MyAccountPage() {
     </main>
   )
 }
-
 

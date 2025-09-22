@@ -1,6 +1,7 @@
 import './globals.css'
 import localFont from 'next/font/local'
 import type { ReactNode } from 'react'
+import { AuthProvider } from '@/lib/auth-context'
 
 const headingFont = localFont({
   src: './fonts/default-heading-font.ttf',
@@ -18,7 +19,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="id">
       <body className={`${headingFont.variable} ${bodyFont.variable}`}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

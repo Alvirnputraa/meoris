@@ -1,27 +1,54 @@
 "use client";
-import Link from 'next/link'
-import Image from 'next/image'
-import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { useAuth } from '@/lib/auth-context'
-import { useCart } from '@/lib/useCart'
-import { useFavorites } from '@/lib/useFavorites'
-import { useEffect, useState as useStateReact } from 'react'
-import { keranjangDb } from '@/lib/database'
 
-export default function MyAccountPage() {
-  const { user, logout } = useAuth()
-  const sp = useSearchParams()
-  const tab = ((sp?.get('tab') || 'detail') as 'detail' | 'alamat')
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [isCartOpen, setIsCartOpen] = useState(false)
-  const [isFavOpen, setIsFavOpen] = useState(false)
-  const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set())
-  const [removingId, setRemovingId] = useState<string | null>(null)
-  const { items: cartItems, count: cartCount, loading: cartLoading, refresh } = useCart()
-  const { favorites, loading: favoritesLoading, toggleFavorite, count: favoritesCount } = useFavorites()
-  const [viewItems, setViewItems] = useState<any[]>([])
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCart } from '@/lib/useCart';
+import { useFavorites } from '@/lib/useFavorites';
+import { keranjangDb } from '@/lib/database';
+
+export default function PermintaanReturnsPage() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isFavOpen, setIsFavOpen] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const { items: cartItems, count: cartCount, loading: cartLoading, refresh } = useCart();
+  const { favorites, loading: favoritesLoading, toggleFavorite, count: favoritesCount } = useFavorites();
+  const [viewItems, setViewItems] = useState<any[]>([]);
+  const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set());
+
+  // Form state
+  const [urlBukti, setUrlBukti] = useState("");
+  const [alasan, setAlasan] = useState("");
+  const [nomorPesanan, setNomorPesanan] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+
+  // Sinkronkan tampilan lokal dengan data hook agar bisa optimistik tanpa flicker
+  useEffect(() => {
+    setViewItems(cartItems || [])
+  }, [cartItems])
+
+  useEffect(() => {
+    if (isCartOpen) {
+      refresh()
+    }
+  }, [isCartOpen, refresh])
+
+  const handleRemoveCartItem = async (itemId: string) => {
+    try {
+      setRemovingId(itemId)
+      // Optimistic: hilangkan dari tampilan dulu
+      setViewItems((items) => items.filter((it: any) => it.id !== itemId))
+      await keranjangDb.removeItem(itemId)
+      // Jangan panggil refresh untuk menghindari flicker; realtime akan menyinkronkan
+    } catch (e) {
+      console.error('Gagal menghapus item keranjang', e)
+    } finally {
+      setRemovingId(null)
+    }
+  }
 
   // Handle checkbox selection in favorites
   const handleFavoriteCheckbox = (favoriteId: string, checked: boolean) => {
@@ -42,110 +69,107 @@ export default function MyAccountPage() {
     setSelectedFavorites(new Set());
   };
 
-  // Sinkronkan tampilan lokal dengan data hook agar bisa optimistik tanpa flicker
+  // Generate / revoke preview URLs every time files change
   useEffect(() => {
-    setViewItems(cartItems || [])
-  }, [cartItems])
+    const urls = files.map((f) => URL.createObjectURL(f));
+    setPreviews(urls);
+    return () => {
+      urls.forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, [files]);
 
-  useEffect(() => {
-    if (isCartOpen && user) {
-      refresh()
+  function onPickFiles(e: ChangeEvent<HTMLInputElement>) {
+    const list = e.target.files;
+    if (!list) return;
+    const incoming = Array.from(list);
+    const combined = [...files, ...incoming];
+    if (combined.length > 3) {
+      const allowed = combined.slice(0, 3);
+      setFiles(allowed);
+      alert("Maksimal 3 foto.");
+    } else {
+      setFiles(combined);
     }
-  }, [isCartOpen, user, refresh])
-
-  const handleRemoveCartItem = async (itemId: string) => {
-    try {
-      setRemovingId(itemId)
-      // Optimistic: hilangkan dari tampilan dulu
-      setViewItems((items) => items.filter((it: any) => it.id !== itemId))
-      await keranjangDb.removeItem(itemId)
-      // Jangan panggil refresh untuk menghindari flicker; realtime akan menyinkronkan
-    } catch (e) {
-      console.error('Gagal menghapus item keranjang', e)
-    } finally {
-      setRemovingId(null)
-    }
+    // reset input value so picking the same file triggers onChange again
+    e.target.value = "";
   }
 
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await logout()
-      // Redirect to home page after logout
-      window.location.href = '/'
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
+  function removeFile(idx: number) {
+    const copy = [...files];
+    copy.splice(idx, 1);
+    setFiles(copy);
   }
-  // If user is not logged in, redirect to login
-  if (!user) {
-    return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="font-heading text-2xl text-black mb-4">Akses Ditolak</h1>
-          <p className="text-gray-600 mb-6">Anda harus login terlebih dahulu untuk mengakses halaman ini.</p>
-          <Link href="/login" className="inline-flex items-center gap-2 rounded-md bg-black text-white px-5 py-3 hover:opacity-90 transition">
-            Login
-          </Link>
-        </div>
-      </main>
-    )
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    // Basic validation
+    if (!nomorPesanan.trim()) {
+      alert("Nomor pesanan wajib diisi.");
+      return;
+    }
+    if (!alasan.trim()) {
+      alert("Alasan pengembalian wajib diisi.");
+      return;
+    }
+    if (files.length === 0 && !urlBukti.trim()) {
+      alert("Lampirkan minimal salah satu: URL bukti (YouTube/Drive) atau foto.");
+      return;
+    }
+    // Mock submit (replace with real API call)
+    console.log({
+      nomorPesanan,
+      alasan,
+      urlBukti,
+      filesCount: files.length,
+    });
+    alert("Permintaan pengembalian terkirim. Kami akan meninjau dan menghubungi Anda.");
+    // reset
+    setUrlBukti("");
+    setAlasan("");
+    setNomorPesanan("");
+    setFiles([]);
   }
 
   return (
     <main>
+      {/* Left sidebar (menu) */}
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[70]">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setIsSidebarOpen(false)}
-            aria-hidden="true"
-          />
+          <div className="absolute inset-0 bg-black/40" onClick={() => setIsSidebarOpen(false)} aria-hidden="true" />
           <aside className="absolute left-0 top-0 h-full w-80 max-w-[85%] bg-white shadow-2xl p-6">
             <div className="mt-6 md:mt-8 flex items-center justify-between">
               <span className="font-heading text-3xl md:text-4xl font-bold text-black">MEORIS</span>
-              <button
-                type="button"
-                aria-label="Tutup menu"
-                className="p-2 rounded hover:opacity-80 text-black cursor-pointer"
-                onClick={() => setIsSidebarOpen(false)}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+              <button type="button" aria-label="Tutup menu" className="p-2 rounded hover:opacity-80 text-black cursor-pointer" onClick={() => setIsSidebarOpen(false)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             </div>
             <nav className="mt-10 md:mt-12">
               <ul className="space-y-5 font-body text-gray-800">
                 <li>
-                  <a href="/#produk" className="flex items-center justify-between text-black hover:underline">
+                  <Link href="/produk" onClick={() => setIsSidebarOpen(false)} className="flex items-center justify-between text-black hover:underline">
                     <span className="font-heading text-base">Produk</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </a>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="flex items-center justify-between text-black hover:underline">
+                  <Link href="/my-account" onClick={() => setIsSidebarOpen(false)} className="flex items-center justify-between text-black hover:underline">
                     <span className="font-heading text-base">Informasi Akun</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </a>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/produk/pesanan" className="flex items-center justify-between text-black hover:underline">
+                  <Link href="/produk/pesanan" onClick={() => setIsSidebarOpen(false)} className="flex items-center justify-between text-black hover:underline">
                     <span>History Pesanan</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </a>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </Link>
                 </li>
               </ul>
             </nav>
           </aside>
         </div>
       )}
+
+      {/* Right panels: Search, Cart, Favorite */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[70]">
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsSearchOpen(false)} aria-hidden="true" />
@@ -329,11 +353,12 @@ export default function MyAccountPage() {
           </aside>
         </div>
       )}
-      {/* Top header (same style as homepage header) */}
+
+      {/* Header row */}
       <div className="bg-white border-b border-gray-200">
         <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-5">
           <div className="flex items-center gap-2">
-            <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-pointer" onClick={() => setIsSidebarOpen(true)}>
+            <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black" onClick={() => setIsSidebarOpen(true)}>
               <Image src="/images/sidebar.png" alt="Menu" width={34} height={34} />
             </button>
             <Link href="/" aria-label="Meoris beranda" className="select-none">
@@ -358,187 +383,121 @@ export default function MyAccountPage() {
           </div>
         </div>
       </div>
-      {/* Hero with title + breadcrumb */}
+
+      {/* Section 1: hero with bg22 and center label */}
       <section className="relative overflow-hidden bg-transparent">
-        {/* Background image with fixed effect */}
-        <div
-          className="absolute inset-0 -z-10 bg-center bg-cover bg-fixed"
-          aria-hidden="true"
-          style={{ backgroundImage: 'url(/images/bgg1.png)' }}
-        />
-        <div className="max-w-7xl mx-auto px-6 md:px-8 py-10 md:py-14 min-h-[24vh] md:min-h-[30vh] flex flex-col items-center justify-center">
-          <h1 className="font-heading text-3xl md:text-4xl text-black text-center">Akun Saya</h1>
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-600 font-body">
-            <Link href="/" className="hover:underline">Beranda</Link>
-            <span>&gt;</span>
-            <span className="text-black">Detail Akun</span>
+        <div className="absolute inset-0 -z-10 bg-center bg-cover" aria-hidden="true" style={{ backgroundImage: 'url(/images/bg22.png)' }} />
+        <div className="max-w-7xl mx-auto px-6 md:px-8 py-12 md:py-16 flex flex-col items-center justify-center text-black">
+          <h1 className="font-heading text-3xl md:text-4xl text-gray-200">Pengembalian</h1>
+          <div className="mt-3 font-body text-sm text-gray-200">
+            <span>Beranda</span>
+            <span className="mx-1">{'>'}</span>
+            <span className="text-gray-200">Pengembalian</span>
           </div>
         </div>
       </section>
-      
 
-      {/* Dashboard layout */}
+      {/* Section 2: Form pengembalian */}
       <section className="bg-white py-10 md:py-14">
-        <div className="max-w-7xl mx-auto px-6 md:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-8">
-            {/* Sidebar */}
-            <aside>
-              <ul className="border border-gray-200 divide-y divide-gray-200">
-                <li>
-                  <Link
-                    href="/my-account?tab=detail"
-                    className={`block px-4 py-3 font-body ${tab === 'detail' ? 'bg-black text-white' : 'text-gray-800 hover:bg-gray-50'}`}
-                    aria-current={tab === 'detail' ? 'page' : undefined}
-                  >
-                    Detail Akun
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/my-account?tab=alamat"
-                    className={`block px-4 py-3 font-body ${tab === 'alamat' ? 'bg-black text-white' : 'text-gray-800 hover:bg-gray-50'}`}
-                    aria-current={tab === 'alamat' ? 'page' : undefined}
-                  >
-                    Alamat
-                  </Link>
-                </li>
-                <li>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-3 font-body text-gray-800 hover:bg-gray-50"
-                  >
-                    Logout
-                  </button>
-                </li>
-              </ul>
-            </aside>
+        <div className="max-w-4xl mx-auto px-6 md:px-8">
+          <h2 className="font-heading text-2xl md:text-3xl text-black">Isi detail dibawah</h2>
 
-            {/* Content */}
+          <form className="mt-6 space-y-6" onSubmit={onSubmit}>
+            {/* URL Youtube/Google Drive */}
             <div>
-              {tab === 'alamat' ? (
-                <>
-                  <h2 className="font-heading text-2xl md:text-3xl text-black">Alamat</h2>
-                  <div className="mt-6 max-w-3xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-5">
-                        {/* Nama Penerima */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Nama Penerima</label>
-                          <div className="relative">
-                            <input type="text" defaultValue="Budi Santoso" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
-                        {/* Nomor HP */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Nomor HP</label>
-                          <div className="relative">
-                            <input type="tel" defaultValue="081234567890" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.09 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.32 1.78.59 2.63a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.45-1.16a2 2 0 0 1 2.11-.45c.85.27 1.73.47 2.63.59A2 2 0 0 1 22 16.92z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
-                        {/* Nama Jalan */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Nama Jalan, gedung, nomor rumah</label>
-                          <div className="relative">
-                            <input type="text" defaultValue="Jl. Melati No. 123, RT 01/RW 02" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
-                        {/* Kecamatan/Desa */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Kecamatan/Desa</label>
-                          <div className="relative">
-                            <input type="text" defaultValue="Kec. Setiabudi / Desa Mekar" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
+              <label htmlFor="url-bukti" className="block font-body text-sm text-black mb-2">
+                URL Youtube/Google Drive
+              </label>
+              <input
+                id="url-bukti"
+                type="url"
+                value={urlBukti}
+                onChange={(e) => setUrlBukti(e.target.value)}
+                placeholder="Tempelkan tautan video unboxing"
+                className="w-full rounded-none border border-gray-300 px-4 py-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40"
+              />
+            </div>
+
+            {/* Foto bukti maksimal 3 dengan preview */}
+            <div>
+              <label className="block font-body text-sm text-black mb-2">
+                Pilih Foto (maksimal 3)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={onPickFiles}
+                className="block w-full text-black file:mr-4 file:rounded-none file:border file:border-gray-300 file:bg-white file:px-4 file:py-2 file:text-sm hover:file:bg-gray-50"
+                aria-label="Unggah foto bukti, maksimal 3"
+              />
+
+              {previews.length > 0 && (
+                <div className="mt-4 grid grid-cols-3 gap-4">
+                  {previews.map((src, idx) => (
+                    <div key={idx} className="relative">
+                      <div className="relative w-full aspect-square overflow-hidden border border-gray-200 bg-gray-100">
+                        <Image src={src} alt={`Preview ${idx + 1}`} fill sizes="(max-width: 768px) 33vw, 200px" className="object-cover" />
                       </div>
-                      <div className="space-y-5">
-                        {/* Provinsi */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Provinsi</label>
-                          <div className="relative">
-                            <input type="text" defaultValue="Jawa Barat" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
-                        {/* Postal code */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Postal Code</label>
-                          <div className="relative">
-                            <input type="text" defaultValue="40123" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                            <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                            </span>
-                          </div>
-                        </div>
-                        {/* Negara */}
-                        <div>
-                          <label className="block font-body text-sm text-gray-700 mb-1">Negara</label>
-                          <input type="text" defaultValue="Indonesia" className="w-full rounded-md border border-gray-300 px-4 py-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                        </div>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(idx)}
+                        className="absolute top-2 right-2 p-1 rounded bg-white/90 border border-gray-300 text-black hover:bg-white"
+                        aria-label="Hapus foto ini"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </button>
                     </div>
-                    <div className="pt-4">
-                      <button className="inline-flex items-center gap-2 rounded-md bg-black text-white px-5 py-3">Save</button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h2 className="font-heading text-2xl md:text-3xl text-black">Detail Akun</h2>
-                  <div className="mt-6 space-y-5 max-w-xl">
-                    {/* Nama */}
-                    <div>
-                      <label className="block font-body text-sm text-gray-700 mb-1">Nama</label>
-                      <div className="relative">
-                        <input type="text" defaultValue={user.nama} className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                        <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                        </span>
-                      </div>
-                    </div>
-                    {/* Email */}
-                    <div>
-                      <label className="block font-body text-sm text-gray-700 mb-1">Email</label>
-                      <div className="relative">
-                        <input type="email" defaultValue={user.email} className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                        <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                        </span>
-                      </div>
-                    </div>
-                    {/* Password */}
-                    <div>
-                      <label className="block font-body text-sm text-gray-700 mb-1">Password</label>
-                      <div className="relative">
-                        <input type="password" defaultValue="********" className="w-full rounded-md border border-gray-300 px-4 py-3 pr-10 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
-                        <span className="absolute inset-y-0 right-2 my-auto p-2 rounded">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="pt-2">
-                      <button className="inline-flex items-center gap-2 rounded-md bg-black text-white px-5 py-3">Save</button>
-                    </div>
-                  </div>
-                </>
+                  ))}
+                </div>
               )}
             </div>
-          </div>
+
+            {/* Alasan pengembalian */}
+            <div>
+              <label htmlFor="alasan" className="block font-body text-sm text-black mb-2">
+                Alasan pengembalian
+              </label>
+              <textarea
+                id="alasan"
+                value={alasan}
+                onChange={(e) => setAlasan(e.target.value)}
+                rows={4}
+                placeholder="Jelaskan alasan pengembalian..."
+                className="w-full rounded-none border border-gray-300 px-4 py-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40"
+              />
+            </div>
+
+            {/* Nomor pesanan */}
+            <div>
+              <label htmlFor="nomor" className="block font-body text-sm text-black mb-2">
+                Nomor pesanan
+              </label>
+              <input
+                id="nomor"
+                type="text"
+                value={nomorPesanan}
+                onChange={(e) => setNomorPesanan(e.target.value)}
+                placeholder="Masukkan nomor pesanan Anda"
+                className="w-full rounded-none border border-gray-300 px-4 py-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40"
+                required
+              />
+            </div>
+
+            {/* Submit */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded-none bg-black px-5 py-3 font-body text-sm text-white hover:opacity-90 transition"
+                aria-label="Konfirmasi dan kirim permintaan"
+              >
+                Konfirmasi dan Kirim
+              </button>
+            </div>
+          </form>
         </div>
       </section>
+
       {/* Footer (four-column) at bottom */}
       <footer className="bg-white py-14 md:py-16">
         <div className="max-w-7xl mx-auto px-6 md:px-8">
@@ -574,7 +533,7 @@ export default function MyAccountPage() {
               </ul>
             </div>
 
-            {/* My Account */}
+            {/* Bantuan & Dukungan */}
             <div className="pb-3 md:pb-4">
               <h4 className="font-heading text-xl text-black">Bantuan &amp; Dukungan</h4>
               <div className="mt-2 w-10 h-[2px] bg-black"></div>
@@ -585,7 +544,7 @@ export default function MyAccountPage() {
               </ul>
             </div>
 
-            {/* Help & Support */}
+            {/* Akun Saya */}
             <div className="pb-3 md:pb-4">
               <h4 className="font-heading text-xl text-black">Akun Saya</h4>
               <div className="mt-2 w-10 h-[2px] bg-black"></div>
@@ -596,11 +555,12 @@ export default function MyAccountPage() {
                 <li><a href="/produk/pesanan" className="hover:underline">Pesanan</a></li>
               </ul>
             </div>
+
           </div>
         </div>
       </footer>
     </main>
-  )
+  );
 }
 
 
