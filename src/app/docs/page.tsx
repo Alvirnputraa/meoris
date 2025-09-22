@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/useCart'
 import { useFavorites } from '@/lib/useFavorites'
-import { keranjangDb } from '@/lib/database'
+import { keranjangDb, produkDb } from '@/lib/database'
 
 export default function DocsPage({ initialActive }: { initialActive?: 'terms' | 'privacy' | 'returns' | 'notif' } = {}) {
    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -15,8 +15,12 @@ export default function DocsPage({ initialActive }: { initialActive?: 'terms' | 
    const [removingId, setRemovingId] = useState<string | null>(null)
    const router = useRouter()
    const [active, setActive] = useState<'terms' | 'privacy' | 'returns' | 'notif'>(initialActive ?? 'terms')
+   const [searchQuery, setSearchQuery] = useState('')
+   const [searchResults, setSearchResults] = useState<any[]>([])
+   const [searchLoading, setSearchLoading] = useState(false)
+   const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set())
    const { items: cartItems, count: cartCount, loading: cartLoading, refresh } = useCart()
-   const { count: favoritesCount } = useFavorites()
+   const { favorites, loading: favoritesLoading, toggleFavorite, count: favoritesCount } = useFavorites()
    const [viewItems, setViewItems] = useState<any[]>([])
 
   function tabToSlug(tab: 'terms' | 'privacy' | 'returns' | 'notif'): string {
@@ -57,6 +61,48 @@ export default function DocsPage({ initialActive }: { initialActive?: 'terms' | 
       setRemovingId(null)
     }
   }
+
+  // Handle search functionality
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setSearchLoading(true);
+    try {
+      const results = await produkDb.search(searchQuery.trim());
+      setSearchResults(results || []);
+    } catch (error) {
+      console.error('Error searching products:', error);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Clear search when sidebar closes
+  const handleCloseSearchSidebar = () => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  // Handle checkbox selection in favorites
+  const handleFavoriteCheckbox = (favoriteId: string, checked: boolean) => {
+    setSelectedFavorites(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(favoriteId);
+      } else {
+        newSet.delete(favoriteId);
+      }
+      return newSet;
+    });
+  };
+
+  // Clear selected favorites when sidebar closes
+  const handleCloseFavSidebar = () => {
+    setIsFavOpen(false);
+    setSelectedFavorites(new Set());
+  };
 
   return (
     <main>
@@ -100,33 +146,62 @@ export default function DocsPage({ initialActive }: { initialActive?: 'terms' | 
       {/* Right panels: Search, Cart, Favorite */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[70]">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setIsSearchOpen(false)} aria-hidden="true" />
-          <aside className="absolute right-0 top-0 h-full w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
-            <button type="button" aria-label="Tutup pencarian" className="absolute -left-12 top-6 w-14 h-10 bg-white rounded-l-lg rounded-r-none text-black flex items-center justify-center" onClick={() => setIsSearchOpen(false)}>
+          <div className="absolute inset-0 bg-black/40" onClick={handleCloseSearchSidebar} aria-hidden="true" />
+          <aside className="absolute right-0 top-0 h-full w-80 md:w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
+            <button type="button" aria-label="Tutup pencarian" className="absolute -left-12 top-6 w-14 h-10 bg-white rounded-l-lg rounded-r-none text-black flex items-center justify-center" onClick={handleCloseSearchSidebar}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             <div className="flex items-center justify-between">
               <span className="font-heading text-xl md:text-2xl text-black">Cari Produk</span>
             </div>
             <div className="mt-6">
-              <input type="text" placeholder="Cari produk" className="w-full rounded-none border border-gray-300 px-4 py-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
+              <input
+                type="text"
+                placeholder="Cari produk"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                className="w-full rounded-none border border-gray-300 px-4 py-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40"
+              />
               <div className="mt-3">
-                <button className="w-full rounded-none bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition">Cari</button>
+                <button
+                  onClick={handleSearch}
+                  disabled={searchLoading || !searchQuery.trim()}
+                  className="w-full rounded-none bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition disabled:opacity-50"
+                >
+                  {searchLoading ? 'Mencari...' : 'Cari'}
+                </button>
               </div>
             </div>
             <div className="mt-6">
               <p className="font-heading text-black">Hasil pencarian</p>
             </div>
             <div className="mt-4 flex-1 overflow-y-auto space-y-5">
-              <div className="flex items-center gap-4">
-                <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
-                  <Image src="/images/test1p.png" alt="Hasil produk" fill sizes="64px" className="object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-gray-900 truncate">Nama Produk Contoh</p>
-                  <p className="font-body text-sm text-gray-700 mt-1">Rp 250.000</p>
-                </div>
-              </div>
+              {searchLoading ? (
+                <p className="text-sm text-gray-600">Mencari produk...</p>
+              ) : searchResults.length > 0 ? (
+                searchResults.map((product: any) => (
+                  <Link key={product.id} href={`/produk/${product.id}/detail`} className="flex items-center gap-4 hover:bg-gray-50 p-2 rounded cursor-pointer">
+                    <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
+                      {product.photo1 ? (
+                        <Image src={product.photo1} alt={product.nama_produk} fill sizes="64px" className="object-cover" />
+                      ) : (
+                        <Image src="/images/test1p.png" alt="Produk" fill sizes="64px" className="object-cover" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body text-gray-900 truncate">{product.nama_produk}</p>
+                      <p className="font-body text-sm text-gray-700 mt-1">
+                        Rp {Number(product.harga || 0).toLocaleString("id-ID")}
+                      </p>
+                    </div>
+                  </Link>
+                ))
+              ) : searchQuery ? (
+                <p className="text-sm text-gray-600">Tidak ada hasil untuk "{searchQuery}"</p>
+              ) : (
+                <p className="text-sm text-gray-600">Masukkan kata kunci untuk mencari produk</p>
+              )}
             </div>
           </aside>
         </div>
@@ -134,7 +209,7 @@ export default function DocsPage({ initialActive }: { initialActive?: 'terms' | 
       {isCartOpen && (
         <div className="fixed inset-0 z-[70]">
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsCartOpen(false)} aria-hidden="true" />
-          <aside className="absolute right-0 top-0 h-full w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
+          <aside className="absolute right-0 top-0 h-full w-80 md:w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
             <button type="button" aria-label="Tutup keranjang" className="absolute -left-12 top-6 w-14 h-10 bg-white rounded-l-lg rounded-r-none text-black flex items-center justify-center" onClick={() => setIsCartOpen(false)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
@@ -198,69 +273,115 @@ export default function DocsPage({ initialActive }: { initialActive?: 'terms' | 
       {isFavOpen && (
         <div className="fixed inset-0 z-[70]">
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsFavOpen(false)} aria-hidden="true" />
-          <aside className="absolute right-0 top-0 h-full w-96 max-w-[92%] bg-white shadow-2xl p-6">
+          <aside className="absolute right-0 top-0 h-full w-80 md:w-96 max-w-[92%] bg-white shadow-2xl p-6">
             <button type="button" aria-label="Tutup favorit" className="absolute -left-12 top-6 w-14 h-10 bg-white rounded-l-lg rounded-r-none text-black flex items-center justify-center" onClick={() => setIsFavOpen(false)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             <div className="flex items-center justify-between">
               <span className="font-heading text-xl md:text-2xl text-black">Favorit</span>
             </div>
-            <div className="mt-6 space-y-5">
-              <div className="flex items-center gap-4">
-                <input type="checkbox" aria-label="Pilih item" className="w-5 h-5 accent-black shrink-0" defaultChecked />
-                <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
-                  <Image src="/images/test1p.png" alt="Produk favorit" fill sizes="64px" className="object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-gray-900 truncate">Nama Produk Favorit</p>
-                  <p className="font-body text-sm text-gray-700 mt-1">Rp 250.000</p>
-                </div>
-                <button type="button" aria-label="Hapus item" className="p-2 rounded hover:bg-gray-100 text-black">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </button>
-              </div>
-            </div>
-            <div className="pt-4">
-              <a href="#" className="inline-flex items-center justify-center w-full rounded-none bg-black px-4 py-2 font-body text-sm text-white hover:opacity-90 transition">
-                Checkout
-              </a>
+            <div className="mt-6 flex-1 overflow-y-auto space-y-5">
+              {favoritesLoading && (!favorites || favorites.length === 0) ? (
+                <p className="text-sm text-gray-600">Memuat favorit...</p>
+              ) : (!favorites || favorites.length === 0) ? (
+                <p className="text-sm text-gray-600">Belum ada favorit</p>
+              ) : (
+                favorites.map((favorite) => (
+                  <Link key={favorite.id} href={`/produk/${favorite.produk_id}/detail`} className="flex items-center gap-4 hover:bg-gray-50 p-2 rounded cursor-pointer">
+                    <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
+                      {favorite.produk?.photo1 ? (
+                        <Image src={favorite.produk.photo1} alt={favorite.produk?.nama_produk || "Produk"} fill sizes="64px" className="object-cover" />
+                      ) : (
+                        <Image src="/images/test1p.png" alt="Produk favorit" fill sizes="64px" className="object-cover" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body text-gray-900 truncate">{favorite.produk?.nama_produk || "Produk"}</p>
+                      <p className="font-body text-sm text-gray-700 mt-1">Rp {Number(favorite.produk?.harga || 0).toLocaleString("id-ID")}</p>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label="Hapus item"
+                      className="p-2 rounded hover:bg-gray-100 text-black"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        await toggleFavorite(favorite.produk_id);
+                      }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  </Link>
+                ))
+              )}
             </div>
           </aside>
         </div>
       )}
 
-      {/* Header row */}
-      <div className="bg-white border-b border-gray-200">
+      {/* Desktop header */}
+      <div className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
         <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-5">
           <div className="flex items-center gap-2">
             <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black" onClick={() => setIsSidebarOpen(true)}>
-              <Image src="/images/sidebar.png" alt="Menu" width={34} height={34} />
+              <Image src="/images/sidebar.png" alt="Menu" width={40} height={40} />
             </button>
             <Link href="/" aria-label="Meoris beranda" className="select-none">
-              <span className="font-heading font-bold text-xl md:text-2xl lg:text-3xl tracking-wide text-black">MEORIS</span>
+              <span className="font-heading font-bold text-3xl tracking-wide text-black">MEORIS</span>
             </Link>
           </div>
-          <div className="flex items-center gap-4 lg:gap-5">
+          <div className="flex items-center gap-5">
             <a href="#" aria-label="Cari" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
-              <Image src="/images/search.png" alt="Search" width={34} height={34} />
+              <Image src="/images/search.png" alt="Search" width={36} height={36} />
             </a>
             <a href="#" aria-label="Favorit" className="relative" onClick={(e) => { e.preventDefault(); setIsFavOpen(true); }}>
-              <Image src="/images/favorit.png" alt="Favorit" width={34} height={34} />
+              <Image src="/images/favorit.png" alt="Favorit" width={36} height={36} />
               <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{favoritesCount}</span>
             </a>
             <a href="#" aria-label="Keranjang" className="relative" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
-              <Image src="/images/cart.png" alt="Cart" width={34} height={34} />
+              <Image src="/images/cart.png" alt="Cart" width={36} height={36} />
               <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
             </a>
             <Link href="/my-account" aria-label="Akun">
-              <Image src="/images/user.png" alt="User" width={34} height={34} />
+              <Image src="/images/user.png" alt="User" width={36} height={36} />
+            </Link>
+          </div>
+        </div>
+      </div>
+      {/* Mobile header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+        <div className="flex items-center justify-between px-5 py-4">
+          <div className="flex items-center gap-2">
+            <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black" onClick={() => setIsSidebarOpen(true)}>
+              <Image src="/images/sidebar.png" alt="Menu" width={28} height={28} />
+            </button>
+            <Link href="/" aria-label="Meoris beranda" className="select-none">
+              <span className="font-heading font-bold text-xl tracking-wide text-black">MEORIS</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-4">
+            <a href="#" aria-label="Cari" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
+              <Image src="/images/search.png" alt="Search" width={26} height={26} />
+            </a>
+            <a href="#" aria-label="Favorit" className="relative" onClick={(e) => { e.preventDefault(); setIsFavOpen(true); }}>
+              <Image src="/images/favorit.png" alt="Favorit" width={26} height={26} />
+              <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{favoritesCount}</span>
+            </a>
+            <a href="#" aria-label="Keranjang" className="relative" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
+              <Image src="/images/cart.png" alt="Cart" width={26} height={26} />
+              <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
+            </a>
+            <Link href="/my-account" aria-label="Akun">
+              <Image src="/images/user.png" alt="User" width={26} height={26} />
             </Link>
           </div>
         </div>
       </div>
 
       {/* Section 1: hero with bg */}
-      <section className="relative overflow-hidden bg-transparent">
+      <section className="relative overflow-hidden bg-transparent pt-[76px]">
         <div className="absolute inset-0 -z-10 bg-center bg-cover" aria-hidden="true" style={{ backgroundImage: 'url(/images/bg22.png)' }} />
         <div className="max-w-7xl mx-auto px-6 md:px-8 py-12 md:py-16 flex flex-col items-center justify-center text-black">
           <h1 className="font-heading text-3xl md:text-4xl text-gray-200">Dokumen</h1>

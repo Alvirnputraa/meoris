@@ -168,7 +168,7 @@ export default function CartDetailPage() {
       {isSearchOpen && (
         <div className="fixed inset-0 z-[70]">
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsSearchOpen(false)} aria-hidden="true" />
-          <aside className="absolute right-0 top-0 h-full w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
+          <aside className="absolute right-0 top-0 h-full w-80 md:w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
             <button type="button" aria-label="Tutup pencarian" className="absolute -left-12 top-6 w-14 h-10 bg-white rounded-l-lg rounded-r-none text-black flex items-center justify-center" onClick={() => setIsSearchOpen(false)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
@@ -201,7 +201,7 @@ export default function CartDetailPage() {
       {isCartOpen && (
         <div className="fixed inset-0 z-[70]">
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsCartOpen(false)} aria-hidden="true" />
-          <aside className="absolute right-0 top-0 h-full w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
+          <aside className="absolute right-0 top-0 h-full w-80 md:w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
             <button type="button" aria-label="Tutup keranjang" className="absolute -left-12 top-6 w-14 h-10 bg-white rounded-l-lg rounded-r-none text-black flex items-center justify-center" onClick={() => setIsCartOpen(false)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
@@ -269,7 +269,7 @@ export default function CartDetailPage() {
             onClick={handleCloseFavSidebar}
             aria-hidden="true"
           />
-          <aside className="absolute right-0 top-0 h-full w-96 max-w-[92%] bg-white shadow-2xl p-6">
+          <aside className="absolute right-0 top-0 h-full w-80 md:w-96 max-w-[92%] bg-white shadow-2xl p-6">
             <button
               type="button"
               aria-label="Tutup favorit"
@@ -290,14 +290,7 @@ export default function CartDetailPage() {
                 <p className="text-sm text-gray-600">Belum ada favorit</p>
               ) : (
                 favorites.map((favorite) => (
-                  <div key={favorite.id} className="flex items-center gap-4">
-                    <input
-                      type="checkbox"
-                      aria-label="Pilih item"
-                      className="w-5 h-5 accent-black shrink-0"
-                      checked={selectedFavorites.has(favorite.id)}
-                      onChange={(e) => handleFavoriteCheckbox(favorite.id, e.target.checked)}
-                    />
+                  <Link key={favorite.id} href={`/produk/${favorite.produk_id}/detail`} className="flex items-center gap-4 hover:bg-gray-50 p-2 rounded cursor-pointer">
                     <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
                       {favorite.produk?.photo1 ? (
                         <Image src={favorite.produk.photo1} alt={favorite.produk?.nama_produk || "Produk"} fill sizes="64px" className="object-cover" />
@@ -313,7 +306,9 @@ export default function CartDetailPage() {
                       type="button"
                       aria-label="Hapus item"
                       className="p-2 rounded hover:bg-gray-100 text-black"
-                      onClick={async () => {
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         await toggleFavorite(favorite.produk_id);
                       }}
                     >
@@ -321,66 +316,75 @@ export default function CartDetailPage() {
                         <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </button>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
-            {favorites && favorites.length > 0 && (
-              <div className="pt-4">
-                <button
-                  className={`inline-flex items-center justify-center w-full rounded-none px-4 py-2 font-body text-sm transition ${
-                    selectedFavorites.size > 0
-                      ? 'bg-black text-white hover:opacity-90 cursor-pointer'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                  disabled={selectedFavorites.size === 0}
-                  onClick={() => {
-                    if (selectedFavorites.size > 0) {
-                      // Handle checkout logic here
-                      console.log('Checkout with selected favorites:', Array.from(selectedFavorites));
-                    }
-                  }}
-                >
-                  Checkout ({selectedFavorites.size} item{selectedFavorites.size !== 1 ? 's' : ''})
-                </button>
-              </div>
-            )}
           </aside>
         </div>
       )}
 
-      {/* Header row */}
-      <div className="bg-white border-b border-gray-200">
+      {/* Desktop header */}
+      <div className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
         <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-5">
           <div className="flex items-center gap-2">
             <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black" onClick={() => setIsSidebarOpen(true)}>
-              <Image src="/images/sidebar.png" alt="Menu" width={34} height={34} />
+              <Image src="/images/sidebar.png" alt="Menu" width={40} height={40} />
             </button>
             <Link href="/" aria-label="Meoris beranda" className="select-none">
-              <span className="font-heading font-bold text-xl md:text-2xl lg:text-3xl tracking-wide text-black">MEORIS</span>
+              <span className="font-heading font-bold text-3xl tracking-wide text-black">MEORIS</span>
             </Link>
           </div>
-          <div className="flex items-center gap-4 lg:gap-5">
+          <div className="flex items-center gap-5">
             <a href="#" aria-label="Cari" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
-              <Image src="/images/search.png" alt="Search" width={34} height={34} />
+              <Image src="/images/search.png" alt="Search" width={36} height={36} />
             </a>
             <a href="#" aria-label="Favorit" className="relative" onClick={(e) => { e.preventDefault(); setIsFavOpen(true); }}>
-              <Image src="/images/favorit.png" alt="Favorit" width={34} height={34} />
+              <Image src="/images/favorit.png" alt="Favorit" width={36} height={36} />
               <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{favoritesCount}</span>
             </a>
             <a href="#" aria-label="Keranjang" className="relative" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
-              <Image src="/images/cart.png" alt="Cart" width={34} height={34} />
+              <Image src="/images/cart.png" alt="Cart" width={36} height={36} />
               <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
             </a>
             <Link href="/my-account" aria-label="Akun">
-              <Image src="/images/user.png" alt="User" width={34} height={34} />
+              <Image src="/images/user.png" alt="User" width={36} height={36} />
+            </Link>
+          </div>
+        </div>
+      </div>
+      {/* Mobile header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+        <div className="flex items-center justify-between px-5 py-4">
+          <div className="flex items-center gap-2">
+            <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black" onClick={() => setIsSidebarOpen(true)}>
+              <Image src="/images/sidebar.png" alt="Menu" width={28} height={28} />
+            </button>
+            <Link href="/" aria-label="Meoris beranda" className="select-none">
+              <span className="font-heading font-bold text-xl tracking-wide text-black">MEORIS</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-4">
+            <a href="#" aria-label="Cari" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
+              <Image src="/images/search.png" alt="Search" width={26} height={26} />
+            </a>
+            <a href="#" aria-label="Favorit" className="relative" onClick={(e) => { e.preventDefault(); setIsFavOpen(true); }}>
+              <Image src="/images/favorit.png" alt="Favorit" width={26} height={26} />
+              <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{favoritesCount}</span>
+            </a>
+            <a href="#" aria-label="Keranjang" className="relative" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
+              <Image src="/images/cart.png" alt="Cart" width={26} height={26} />
+              <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
+            </a>
+            <Link href="/my-account" aria-label="Akun">
+              <Image src="/images/user.png" alt="User" width={26} height={26} />
             </Link>
           </div>
         </div>
       </div>
 
       {/* Section 1: breadcrumb & title */}
-      <section className="relative overflow-hidden bg-transparent">
+      <section className="relative overflow-hidden bg-transparent pt-[76px]">
         <div
           className="absolute inset-0 -z-10 bg-center bg-cover"
           aria-hidden="true"

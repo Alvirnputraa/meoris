@@ -98,17 +98,35 @@ export const produkDb = {
     return data
   },
 
-  // Search products
+  // Search products with exact substring matching
   async search(query: string, limit = 20) {
+    const searchTerm = query.trim()
+    
+    if (searchTerm.length === 0) return []
+    
+    // Get all products first
     const { data, error } = await supabase
       .from('produk')
       .select('*')
-      .or(`nama_produk.ilike.%${query}%,deskripsi.ilike.%${query}%`)
-      .limit(limit)
+      .limit(100)
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data
+    
+    // Very strict client-side filtering - case insensitive but exact substring match
+    const filteredData = data?.filter(product => {
+      const productName = (product.nama_produk || '').toLowerCase()
+      const productDesc = (product.deskripsi || '').toLowerCase()
+      const searchLower = searchTerm.toLowerCase()
+      
+      // Only match if the exact search string appears as a substring
+      const nameMatch = productName.includes(searchLower)
+      const descMatch = productDesc.includes(searchLower)
+      
+      return nameMatch || descMatch
+    }) || []
+
+    return filteredData.slice(0, limit)
   },
 
   // Create new product

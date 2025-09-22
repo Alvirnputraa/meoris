@@ -7,6 +7,8 @@ import { useProducts } from '@/lib/useProducts';
 import { useFavorites } from '@/lib/useFavorites';
 import { useEffect, useRef, useState } from 'react';
 import Header from '@/components/layout/Header';
+import { produkDb } from '@/lib/database';
+import { useAuth } from '@/lib/auth-context';
 
 
 export default function Page() {
@@ -18,9 +20,13 @@ export default function Page() {
   const [isFavOpen, setIsFavOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const { items: homeCartItems, loading: homeCartLoading } = useCart();
   const { count: cartCount } = useCart();
   const { favorites, loading: favoritesLoading, toggleFavorite, isFavorite, count: favoritesCount } = useFavorites();
+  const { user } = useAuth();
 
   // Handle checkbox selection in favorites
   const handleFavoriteCheckbox = (favoriteId: string, checked: boolean) => {
@@ -39,6 +45,29 @@ export default function Page() {
   const handleCloseFavSidebar = () => {
     setIsFavOpen(false);
     setSelectedFavorites(new Set());
+  };
+
+  // Handle search functionality
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setSearchLoading(true);
+    try {
+      const results = await produkDb.search(searchQuery.trim());
+      setSearchResults(results || []);
+    } catch (error) {
+      console.error('Error searching products:', error);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Clear search when sidebar closes
+  const handleCloseSearchSidebar = () => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
   };
   
 
@@ -224,16 +253,16 @@ export default function Page() {
         <div className="fixed inset-0 z-[70]">
           <div
             className="absolute inset-0 bg-black/40"
-            onClick={() => setIsSearchOpen(false)}
+            onClick={handleCloseSearchSidebar}
             aria-hidden="true"
           />
-          <aside className="absolute right-0 top-0 h-full w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
+          <aside className="absolute right-0 top-0 h-full w-80 md:w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
             {/* Pull-tab close button on the left edge */}
             <button
               type="button"
               aria-label="Tutup pencarian"
               className="absolute -left-12 top-6 w-14 h-10 bg-white rounded-l-lg rounded-r-none text-black flex items-center justify-center"
-              onClick={() => setIsSearchOpen(false)}
+              onClick={handleCloseSearchSidebar}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -247,32 +276,49 @@ export default function Page() {
               <input
                 type="text"
                 placeholder="Cari produk"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="w-full rounded-none border border-gray-300 px-4 py-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40"
               />
               <div className="mt-3">
-                <button className="w-full rounded-none bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition">Cari</button>
+                <button
+                  onClick={handleSearch}
+                  disabled={searchLoading || !searchQuery.trim()}
+                  className="w-full rounded-none bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition disabled:opacity-50"
+                >
+                  {searchLoading ? 'Mencari...' : 'Cari'}
+                </button>
               </div>
             </div>
             <div className="mt-6">
               <p className="font-heading text-black">Hasil pencarian</p>
             </div>
               <div className="mt-4 flex-1 overflow-y-auto space-y-5">
-                {homeCartItems && homeCartItems.length > 0 ? (
-                  homeCartItems.map((item: any) => (
-                    <div key={item.id} className="flex items-center gap-4">
+                {searchLoading ? (
+                  <p className="text-sm text-gray-600">Mencari produk...</p>
+                ) : searchResults.length > 0 ? (
+                  searchResults.map((product: any) => (
+                    <Link key={product.id} href={`/produk/${product.id}/detail`} className="flex items-center gap-4 hover:bg-gray-50 p-2 rounded cursor-pointer">
                       <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
-                        <Image src="/images/test1p.png" alt="Hasil produk" fill sizes="64px" className="object-cover" />
+                        {product.photo1 ? (
+                          <Image src={product.photo1} alt={product.nama_produk} fill sizes="64px" className="object-cover" />
+                        ) : (
+                          <Image src="/images/test1p.png" alt="Produk" fill sizes="64px" className="object-cover" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-body text-gray-900 truncate">{item.produk?.nama_produk || "Produk"}</p>
+                        <p className="font-body text-gray-900 truncate">{product.nama_produk}</p>
                         <p className="font-body text-sm text-gray-700 mt-1">
-                          <span className="text-black">{item.quantity} x</span> Rp {Number(item.produk?.harga || 0).toLocaleString("id-ID")} {item.size ? <span className="ml-2 text-gray-500">Uk: {item.size}</span> : null}
+                          Rp {Number(product.harga || 0).toLocaleString("id-ID")}
                         </p>
                       </div>
-                    </div>
+                    </Link>
                   ))
+                ) : searchQuery ? (
+                  <p className="text-sm text-gray-600">Tidak ada hasil untuk "{searchQuery}"</p>
                 ) : (
-                  <p className="text-sm text-gray-600">Tidak ada hasil pencarian</p>
+                  <p className="text-sm text-gray-600">Masukkan kata kunci untuk mencari produk</p>
                 )}
               </div>
           </aside>
@@ -285,7 +331,7 @@ export default function Page() {
             onClick={() => setIsCartOpen(false)}
             aria-hidden="true"
           />
-          <aside className="absolute right-0 top-0 h-full w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
+          <aside className="absolute right-0 top-0 h-full w-80 md:w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
             {/* Pull-tab close button on the left edge */}
             <button
               type="button"
@@ -346,7 +392,7 @@ export default function Page() {
             onClick={handleCloseFavSidebar}
             aria-hidden="true"
           />
-          <aside className="absolute right-0 top-0 h-full w-96 max-w-[92%] bg-white shadow-2xl p-6">
+          <aside className="absolute right-0 top-0 h-full w-80 md:w-96 max-w-[92%] bg-white shadow-2xl p-6">
             {/* Pull-tab close button on the left edge */}
             <button
               type="button"
@@ -369,14 +415,7 @@ export default function Page() {
                 <p className="text-sm text-gray-600">Belum ada favorit</p>
               ) : (
                 favorites.map((favorite) => (
-                  <div key={favorite.id} className="flex items-center gap-4">
-                    <input
-                      type="checkbox"
-                      aria-label="Pilih item"
-                      className="w-5 h-5 accent-black shrink-0"
-                      checked={selectedFavorites.has(favorite.id)}
-                      onChange={(e) => handleFavoriteCheckbox(favorite.id, e.target.checked)}
-                    />
+                  <Link key={favorite.id} href={`/produk/${favorite.produk_id}/detail`} className="flex items-center gap-4 hover:bg-gray-50 p-2 rounded cursor-pointer">
                     <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
                       {favorite.produk?.photo1 ? (
                         <Image src={favorite.produk.photo1} alt={favorite.produk?.nama_produk || "Produk"} fill sizes="64px" className="object-cover" />
@@ -392,7 +431,9 @@ export default function Page() {
                       type="button"
                       aria-label="Hapus item"
                       className="p-2 rounded hover:bg-gray-100 text-black"
-                      onClick={async () => {
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         await toggleFavorite(favorite.produk_id);
                       }}
                     >
@@ -400,30 +441,10 @@ export default function Page() {
                         <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </button>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
-            {favorites && favorites.length > 0 && (
-              <div className="pt-4">
-                <button
-                  className={`inline-flex items-center justify-center w-full rounded-none px-4 py-2 font-body text-sm transition ${
-                    selectedFavorites.size > 0
-                      ? 'bg-black text-white hover:opacity-90 cursor-pointer'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                  disabled={selectedFavorites.size === 0}
-                  onClick={() => {
-                    if (selectedFavorites.size > 0) {
-                      // Handle checkout logic here
-                      console.log('Checkout with selected favorites:', Array.from(selectedFavorites));
-                    }
-                  }}
-                >
-                  Checkout ({selectedFavorites.size} item{selectedFavorites.size !== 1 ? 's' : ''})
-                </button>
-              </div>
-            )}
           </aside>
         </div>
       )}
@@ -456,7 +477,7 @@ export default function Page() {
                 <Image src="/images/cart.png" alt="Cart" width={36} height={36} />
                 <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
               </a>
-              <a href="/my-account" aria-label="Akun">
+              <a href={user ? "/my-account" : "/login"} aria-label="Akun">
                 <Image src="/images/user.png" alt="User" width={36} height={36} />
               </a>
             </div>
@@ -494,7 +515,7 @@ export default function Page() {
               <Image src="/images/cart.png" alt="Cart" width={34} height={34} />
               <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
             </a>
-            <a href="/my-account" aria-label="Akun" className="cursor-pointer">
+            <a href={user ? "/my-account" : "/login"} aria-label="Akun" className="cursor-pointer">
               <Image src="/images/user.png" alt="User" width={34} height={34} />
             </a>
           </div>
@@ -525,7 +546,7 @@ export default function Page() {
                 <Image src="/images/cart.png" alt="Cart" width={26} height={26} />
                 <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
               </a>
-              <a href="/my-account" aria-label="Akun" className="cursor-pointer">
+              <a href={user ? "/my-account" : "/login"} aria-label="Akun" className="cursor-pointer">
                 <Image src="/images/user.png" alt="User" width={26} height={26} />
               </a>
             </div>
