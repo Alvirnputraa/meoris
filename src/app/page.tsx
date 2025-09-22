@@ -464,7 +464,7 @@ export default function Page() {
         </div>
       )}
       {/* Section Pertama: mengikuti split background dari body */}
-      <section className="relative grid min-h-[60vh] md:min-h-[80vh] grid-cols-2 split-bg pt-[64px] md:pt-0" data-route="/home">
+      <section className="relative grid h-[55vh] md:h-[60vh] lg:h-[80vh] grid-cols-2 split-bg pt-[64px] md:pt-0" data-route="/home">
         {/* Desktop header row: brand left, icons right (aligned) */}
         <div className="hidden md:flex absolute top-12 left-6 right-10 z-40 items-center justify-between">
           <div className="flex items-center gap-2">
@@ -502,21 +502,31 @@ export default function Page() {
         {/* Mobile header: MEORIS left, icons right */}
         <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200">
           <div className="flex items-center justify-between px-5 py-4">
-            <span className="font-heading font-bold text-xl tracking-wide text-black select-none">MEORIS</span>
-            <div className="flex items-center gap-5">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Buka menu"
+                className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-pointer"
+                onClick={() => setIsSidebarOpen(true)}
+              >
+                <Image src="/images/sidebar.png" alt="Menu" width={28} height={28} />
+              </button>
+              <span className="font-heading font-bold text-xl tracking-wide text-black select-none">MEORIS</span>
+            </div>
+            <div className="flex items-center gap-4">
               <a href="#" aria-label="Cari" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
-                <Image src="/images/search.png" alt="Search" width={32} height={32} />
+                <Image src="/images/search.png" alt="Search" width={26} height={26} />
               </a>
               <a href="#" aria-label="Favorit" className="relative" onClick={(e) => { e.preventDefault(); setIsFavOpen(true); }}>
-                <Image src="/images/favorit.png" alt="Favorit" width={32} height={32} />
+                <Image src="/images/favorit.png" alt="Favorit" width={26} height={26} />
                 <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{favoritesCount}</span>
               </a>
               <a href="#" aria-label="Keranjang" className="relative" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
-                <Image src="/images/cart.png" alt="Cart" width={32} height={32} />
+                <Image src="/images/cart.png" alt="Cart" width={26} height={26} />
                 <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
               </a>
               <a href="/my-account" aria-label="Akun" className="cursor-pointer">
-                <Image src="/images/user.png" alt="User" width={32} height={32} />
+                <Image src="/images/user.png" alt="User" width={26} height={26} />
               </a>
             </div>
           </div>
@@ -531,13 +541,13 @@ export default function Page() {
             <span className={`font-heading ${phase === 2 ? 'text-black text-xl lg:text-2xl xl:text-3xl' : 'text-gray-500 text-base lg:text-xl xl:text-2xl'}`}>03._</span>
             <span className={`font-heading ${phase === 3 ? 'text-black text-xl lg:text-2xl xl:text-3xl' : 'text-gray-500 text-base lg:text-xl xl:text-2xl'}`}>04._</span>
           </div>
-          <div className="relative w-full h-[55vh] md:h-[75vh] max-w-none overflow-hidden">
+          <div className="relative w-full h-[55vh] md:h-[60vh] lg:h-[75vh] max-w-none md:max-w-[500px] lg:max-w-none mx-auto overflow-hidden">
             <Image
               src={mainImg}
               alt={`Model memakai ${phaseTitle}`}
               fill
-              sizes="(max-width: 768px) 50vw, 45vw"
-              className={`object-cover scale-[0.85] sm:scale-[0.70] md:scale-100 will-change-transform ${phase === 1 ? 'fade-switch' : ''}`}
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 40vw, 45vw"
+              className={`object-cover scale-[0.85] sm:scale-[0.70] md:scale-[0.70] lg:scale-100 will-change-transform ${phase === 1 ? 'fade-switch' : ''}`}
               priority
             />
           </div>
@@ -545,7 +555,7 @@ export default function Page() {
 
         {/* Kanan (50%) - ganti background image bgsec1.png */}
         <div
-          className="relative flex items-stretch bg-transparent bg-center bg-cover"
+          className="relative flex items-stretch bg-transparent bg-center bg-cover h-[55vh] md:h-[60vh] lg:h-[80vh]"
           style={{
             backgroundImage: 'url(/images/bgsec1.png)',
             backgroundSize: 'cover',
@@ -553,7 +563,7 @@ export default function Page() {
             backgroundRepeat: 'no-repeat',
           }}
         >
-          <div className="grid w-full grid-cols-1 items-stretch lg:grid-cols-[0.8fr_1.2fr] xl:grid-cols-[0.75fr_1.25fr] relative z-20">
+          <div className="grid w-full grid-cols-1 items-stretch lg:grid-cols-[0.8fr_1.2fr] xl:grid-cols-[0.75fr_1.25fr] relative z-20 h-full">
             {/* Kolom teks */}
             <div className="flex h-full flex-col justify-center gap-6 lg:gap-0 p-6 md:py-10 md:pl-0 md:pr-12 md:-ml-8 lg:pl-0 lg:pr-8 xl:pr-10 lg:-ml-16 xl:-ml-20 2xl:-ml-24">
               {/* Garis animasi di atas heading (desktop) */}
@@ -566,16 +576,16 @@ export default function Page() {
               </div>
 
               {/* Viewport + Track: geser vertikal dari konten produk 1 ke produk 2 */}
-              <div className="slide-viewport h-[280px] md:h-[280px] lg:h-[320px] xl:h-[360px] lg:-mt-1">
+              <div className="slide-viewport h-[280px] md:h-[240px] lg:h-[320px] xl:h-[360px] lg:-mt-1">
                 <div className="slide-track" style={{ transform: `translateY(-${(phase / 4) * 100}%)` }}>
                   {/* Pane Produk 1 */}
-                  <div className="flex flex-col gap-6 justify-center h-[280px] md:h-[280px] lg:h-[320px] xl:h-[360px]">
-                    <h1 className="font-heading text-3xl leading-tight tracking-tight text-black md:text-4xl lg:text-[38px] xl:text-[44px]">
+                  <div className="flex flex-col gap-6 justify-center h-[280px] md:h-[240px] lg:h-[320px] xl:h-[360px]">
+                    <h1 className="font-heading text-xl leading-tight tracking-tight text-black md:text-4xl lg:text-[38px] xl:text-[44px]">
                       <span className="block">Sock Sneakers</span>
                       <span className="block">Cloud</span>
                     </h1>
 
-                    <p className="font-body text-sm leading-relaxed text-gray-700 md:text-base lg:text-lg xl:text-lg">
+                    <p className="font-body text-xs leading-relaxed text-gray-700 md:text-base lg:text-lg xl:text-lg">
                       Cocok dipakai harian maupun saat santai dan mempunyai bahan lembut
                     </p>
 
@@ -605,13 +615,13 @@ export default function Page() {
                   </div>
 
                   {/* Pane Produk 2 */}
-                  <div className="flex flex-col gap-6 justify-center h-[280px] md:h-[280px] lg:h-[320px] xl:h-[360px]">
-                    <h1 className="font-heading text-3xl leading-tight tracking-tight text-black md:text-4xl lg:text-[38px] xl:text-[44px]">
+                  <div className="flex flex-col gap-6 justify-center h-[280px] md:h-[240px] lg:h-[320px] xl:h-[360px]">
+                    <h1 className="font-heading text-xl leading-tight tracking-tight text-black md:text-4xl lg:text-[38px] xl:text-[44px]">
                       <span className="block">Sock Sneakers</span>
                       <span className="block">Leather</span>
                     </h1>
 
-                    <p className="font-body text-sm leading-relaxed text-gray-700 md:text-base lg:text-lg xl:text-lg">
+                    <p className="font-body text-xs leading-relaxed text-gray-700 md:text-base lg:text-lg xl:text-lg">
                       Desain minimalis dengan bahan kulit yang berkilau
                     </p>
 
@@ -641,13 +651,13 @@ export default function Page() {
                   </div>
 
                   {/* Pane Produk 3 */}
-                  <div className="flex flex-col gap-6 justify-center h-[280px] md:h-[280px] lg:h-[320px] xl:h-[360px]">
-                    <h1 className="font-heading text-3xl leading-tight tracking-tight text-black md:text-4xl lg:text-[38px] xl:text-[44px]">
+                  <div className="flex flex-col gap-6 justify-center h-[280px] md:h-[240px] lg:h-[320px] xl:h-[360px]">
+                    <h1 className="font-heading text-xl leading-tight tracking-tight text-black md:text-4xl lg:text-[38px] xl:text-[44px]">
                       <span className="block">Gladiator Sandals</span>
                       <span className="block">Shoes</span>
                     </h1>
 
-                    <p className="font-body text-sm leading-relaxed text-gray-700 md:text-base lg:text-lg xl:text-lg">
+                    <p className="font-body text-xs leading-relaxed text-gray-700 md:text-base lg:text-lg xl:text-lg">
                       Nyaman dipakai dengan bahan lembut terasa di kaki
                     </p>
 
@@ -677,13 +687,13 @@ export default function Page() {
                   </div>
 
                   {/* Pane Produk 4 */}
-                  <div className="flex flex-col gap-6 justify-center h-[280px] md:h-[280px] lg:h-[320px] xl:h-[360px]">
-                    <h1 className="font-heading text-3xl leading-tight tracking-tight text-black md:text-4xl lg:text-[38px] xl:text-[44px]">
+                  <div className="flex flex-col gap-6 justify-center h-[280px] md:h-[240px] lg:h-[320px] xl:h-[360px]">
+                    <h1 className="font-heading text-xl leading-tight tracking-tight text-black md:text-4xl lg:text-[38px] xl:text-[44px]">
                       <span className="block">Gladiator Canvas</span>
                       <span className="block">Loafers</span>
                     </h1>
 
-                    <p className="font-body text-sm leading-relaxed text-gray-700 md:text-base lg:text-lg xl:text-lg">
+                    <p className="font-body text-xs leading-relaxed text-gray-700 md:text-base lg:text-lg xl:text-lg">
                       Tampil keren dengan sepatu nyaman di kaki
                     </p>
 
@@ -779,7 +789,7 @@ export default function Page() {
 
         {/* Section 2 - Mobile: vertical layout */}
         <section
-          className="lg:hidden mt-1 px-4 py-8"
+          className="lg:hidden mt-1 px-4 py-12"
           style={{
             backgroundImage: 'url(/images/bg.png)',
             backgroundSize: 'cover',
@@ -788,9 +798,9 @@ export default function Page() {
           }}
           data-route="/home"
         >
-          <div className="flex flex-col items-center gap-6">
+          <div className="flex flex-col items-center gap-6 mt-8">
             {/* Poster besar di atas */}
-            <div className="relative overflow-hidden border border-gray-200 bg-gray-100 aspect-square w-full max-w-[420px] reveal-on-scroll" data-reveal style={{ transitionDelay: '60ms' }}>
+            <div className="relative overflow-hidden border border-gray-200 bg-gray-100 aspect-square w-full max-w-[340px] md:max-w-[420px] reveal-on-scroll" data-reveal style={{ transitionDelay: '60ms' }}>
               <Image
                 src="/images/poster.png"
                 alt="Poster koleksi"
@@ -801,7 +811,7 @@ export default function Page() {
             </div>
 
             {/* Empat kotak (2x2) horizontal di mobile */}
-            <div className="w-full max-w-[420px] grid grid-cols-2 gap-4">
+            <div className="w-full max-w-[340px] md:max-w-[420px] grid grid-cols-2 gap-4">
               <div className="border border-gray-200 bg-gray-100 aspect-square w-full reveal-on-scroll" data-reveal style={{ transitionDelay: '120ms' }}></div>
               <div className="border border-gray-200 bg-gray-100 aspect-square w-full reveal-on-scroll" data-reveal style={{ transitionDelay: '180ms' }}></div>
               <div className="border border-gray-200 bg-gray-100 aspect-square w-full reveal-on-scroll" data-reveal style={{ transitionDelay: '240ms' }}></div>
