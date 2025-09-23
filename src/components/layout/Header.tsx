@@ -189,55 +189,54 @@ export default function Header() {
             <div className="flex items-center justify-between">
               <span className="font-heading text-xl md:text-2xl text-black">Item Keranjang</span>
             </div>
-            <div className="mt-6 space-y-5">
-              {cartLoading && viewItems.length === 0 ? (
-                <p className="text-sm text-gray-600">Memuat keranjang...</p>
-              ) : viewItems.length === 0 ? (
-                <p className="text-sm text-gray-600">Keranjang kosong</p>
-              ) : (
-                viewItems.map((item: any) => (
-                  <div key={item.id} className="flex items-center gap-4">
-                    <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
-                      {item.produk?.photo1 ? (
-                        <Image src={item.produk.photo1} alt={item.produk?.nama_produk || 'Produk'} fill sizes="64px" className="object-cover" />
-                      ) : (
-                        <Image src="/images/test1p.png" alt="Produk" fill sizes="64px" className="object-cover" />
-                      )}
+            <div className="mt-6">
+              <div className="space-y-5">
+                {cartLoading && viewItems.length === 0 ? (
+                  <p className="text-sm text-gray-600">Memuat keranjang...</p>
+                ) : viewItems.length === 0 ? (
+                  <p className="text-sm text-gray-600">Keranjang kosong</p>
+                ) : (
+                  viewItems.map((item: any) => (
+                    <div key={item.id} className="flex items-center gap-4">
+                      <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
+                        {item.produk?.photo1 ? (
+                          <Image src={item.produk.photo1} alt={item.produk?.nama_produk || 'Produk'} fill sizes="64px" className="object-cover" />
+                        ) : (
+                          <Image src="/images/test1p.png" alt="Produk" fill sizes="64px" className="object-cover" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-body text-gray-900 truncate">{item.produk?.nama_produk || 'Produk'}</p>
+                        <p className="font-body text-sm text-gray-700 mt-1"><span className="text-black">{item.quantity} x</span> Rp {Number(item.produk?.harga || 0).toLocaleString('id-ID')}{item.size ? <span className="ml-2 text-gray-500">Uk: {item.size}</span> : null}</p>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Hapus item"
+                        className="p-2 rounded hover:bg-gray-100 text-black disabled:opacity-50"
+                        onClick={() => handleRemoveCartItem(item.id)}
+                        disabled={removingId === item.id}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-gray-900 truncate">{item.produk?.nama_produk || 'Produk'}</p>
-                      <p className="font-body text-sm text-gray-700 mt-1"><span className="text-black">{item.quantity} x</span> Rp {Number(item.produk?.harga || 0).toLocaleString('id-ID')}{item.size ? <span className="ml-2 text-gray-500">Uk: {item.size}</span> : null}</p>
-                    </div>
-                    <button
-                      type="button"
-                      aria-label="Hapus item"
-                      className="p-2 rounded hover:bg-gray-100 text-black disabled:opacity-50"
-                      onClick={() => handleRemoveCartItem(item.id)}
-                      disabled={removingId === item.id}
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-            <div className="pt-4">
-              <p className="font-heading text-center text-lg text-black"><span className="font-bold">Subtotal</span> : Rp {viewItems.reduce((sum, it:any) => sum + (Number(it.produk?.harga || 0) * Number(it.quantity || 1)), 0).toLocaleString('id-ID')}</p>
-              <div className="mt-4 flex flex-col items-stretch gap-3">
-                <Link
-                  href="/produk/detail-checkout"
-                  className="inline-flex items-center justify-center rounded-none border border-black px-4 py-2 font-body text-sm text-black hover:bg-black hover:text-white transition w-full"
-                  onClick={() => {
-                    setIsCartOpen(false);
-                  }}
-                >
-                  Lihat Detail
-                </Link>
-                <Link href="/produk/checkout" className="inline-flex items-center justify-center rounded-none bg-black px-4 py-2 font-body text-sm text-white hover:opacity-90 transition w-full">
-                  Checkout
-                </Link>
+                  ))
+                )}
+              </div>
+              <div className="mt-2">
+                <p className="font-heading text-center text-lg text-black"><span className="font-bold">Subtotal</span> : Rp {viewItems.reduce((sum, it:any) => sum + (Number(it.produk?.harga || 0) * Number(it.quantity || 1)), 0).toLocaleString('id-ID')}</p>
+                <div className="mt-4 flex flex-col items-stretch gap-3">
+                  <Link
+                    href="/produk/detail-checkout"
+                    className="inline-flex items-center justify-center rounded-none border border-black px-4 py-2 font-body text-sm text-black hover:bg-black hover:text-white transition w-full"
+                    onClick={() => {
+                      setIsCartOpen(false);
+                    }}
+                  >
+                    Lihat Detail
+                  </Link>
+                </div>
               </div>
             </div>
           </aside>
@@ -312,22 +311,7 @@ export default function Header() {
             </div>
             {favorites && favorites.length > 0 && (
               <div className="pt-4">
-                <button
-                  className={`inline-flex items-center justify-center w-full rounded-none px-4 py-2 font-body text-sm transition ${
-                    selectedFavorites.size > 0
-                      ? 'bg-black text-white hover:opacity-90 cursor-pointer'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                  disabled={selectedFavorites.size === 0}
-                  onClick={() => {
-                    if (selectedFavorites.size > 0) {
-                      // Handle checkout logic here
-                      console.log('Checkout with selected favorites:', Array.from(selectedFavorites));
-                    }
-                  }}
-                >
-                  Checkout ({selectedFavorites.size} item{selectedFavorites.size !== 1 ? 's' : ''})
-                </button>
+                {/* Checkout button removed as requested */}
               </div>
             )}
           </aside>
@@ -336,4 +320,11 @@ export default function Header() {
     </header>
   )
 }
+
+
+
+
+
+
+
 

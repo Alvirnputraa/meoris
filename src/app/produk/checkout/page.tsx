@@ -6,11 +6,12 @@ import { useAuth } from '@/lib/auth-context'
 import { useCart } from '@/lib/useCart'
 import { useFavorites } from '@/lib/useFavorites'
 import { keranjangDb, praCheckoutDb } from '@/lib/database'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 export default function CheckoutPage() {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const praCheckoutId = searchParams?.get('pra_checkout_id')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -24,6 +25,11 @@ export default function CheckoutPage() {
   const [praCheckoutData, setPraCheckoutData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace('/login')
+    }
+  }, [isLoading, user, router])
   // Handle checkbox selection in favorites
   const handleFavoriteCheckbox = (favoriteId: string, checked: boolean) => {
     setSelectedFavorites(prev => {
@@ -79,6 +85,13 @@ export default function CheckoutPage() {
     }
   }, [cartItems, praCheckoutId])
 
+  if (isLoading) {
+    return null
+  }
+
+  if (!user) {
+    return null // Show nothing while redirecting
+  }
   const handleRemoveCartItem = async (itemId: string) => {
     try {
       setRemovingId(itemId)
@@ -93,6 +106,17 @@ export default function CheckoutPage() {
     } finally {
       setRemovingId(null)
     }
+  }
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) {
+      router.replace('/login')
+    }
+  }, [user, router])
+
+  if (!user) {
+    return null // Show nothing while redirecting
   }
 
   // Gunakan data dari pra_checkout jika ada, atau hitung dari cart items
@@ -695,5 +719,4 @@ export default function CheckoutPage() {
     </main>
   )
 }
-
 

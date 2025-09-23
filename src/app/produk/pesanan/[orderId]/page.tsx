@@ -2,12 +2,16 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 import { useCart } from '@/lib/useCart'
 import { useFavorites } from '@/lib/useFavorites'
 import { keranjangDb, produkDb } from '@/lib/database'
 
 export default function OrderDetailPage({ params }: { params: { orderId: string } }) {
   const { orderId } = params
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -50,6 +54,21 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
       refresh()
     }
   }, [isCartOpen, refresh])
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace('/login')
+    }
+  }, [isLoading, user, router])
+
+  if (isLoading) {
+    return null
+  }
+
+  if (!user) {
+    return null // Show nothing while redirecting
+  }
 
   const handleRemoveCartItem = async (itemId: string) => {
     try {
@@ -538,4 +557,5 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
     </main>
   )
 }
+
 

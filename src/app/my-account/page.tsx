@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useCart } from '@/lib/useCart'
 import { useFavorites } from '@/lib/useFavorites'
@@ -11,6 +11,7 @@ import { keranjangDb, produkDb } from '@/lib/database'
 
 export default function MyAccountPage() {
   const { user, logout } = useAuth()
+  const router = useRouter()
   const sp = useSearchParams()
   const tab = ((sp?.get('tab') || 'detail') as 'detail' | 'alamat')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -104,18 +105,14 @@ export default function MyAccountPage() {
     }
   }
   // If user is not logged in, redirect to login
+  useEffect(() => {
+    if (!user) {
+      router.replace('/login')
+    }
+  }, [user, router])
+
   if (!user) {
-    return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="font-heading text-2xl text-black mb-4">Akses Ditolak</h1>
-          <p className="text-gray-600 mb-6">Anda harus login terlebih dahulu untuk mengakses halaman ini.</p>
-          <Link href="/login" className="inline-flex items-center gap-2 rounded-md bg-black text-white px-5 py-3 hover:opacity-90 transition">
-            Login
-          </Link>
-        </div>
-      </main>
-    )
+    return null // Show nothing while redirecting
   }
 
   return (
