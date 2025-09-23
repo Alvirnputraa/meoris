@@ -226,17 +226,17 @@ export default function Header() {
               </div>
               <div className="mt-2">
                 <p className="font-heading text-center text-lg text-black"><span className="font-bold">Subtotal</span> : Rp {viewItems.reduce((sum, it:any) => sum + (Number(it.produk?.harga || 0) * Number(it.quantity || 1)), 0).toLocaleString('id-ID')}</p>
-                <div className="mt-4 flex flex-col items-stretch gap-3">
-                  <Link
-                    href="/produk/detail-checkout"
-                    className="inline-flex items-center justify-center rounded-none border border-black px-4 py-2 font-body text-sm text-black hover:bg-black hover:text-white transition w-full"
-                    onClick={() => {
-                      setIsCartOpen(false);
-                    }}
-                  >
-                    Lihat Detail
-                  </Link>
-                </div>
+              <div className="mt-4 flex flex-col items-stretch gap-3">
+                <Link
+                  href="/produk/detail-checkout"
+                  className="inline-flex items-center justify-center rounded-none border border-black bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition w-full"
+                  onClick={() => {
+                    setIsCartOpen(false);
+                  }}
+                >
+                  Checkout
+                </Link>
+              </div>
               </div>
             </div>
           </aside>

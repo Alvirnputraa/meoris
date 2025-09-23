@@ -5,8 +5,8 @@ import { useState } from 'react'
 import { useCart } from '@/lib/useCart'
 import { useFavorites } from '@/lib/useFavorites'
 
-export default function CheckoutPage({ params }: { params: { id: string } }) {
-  const { id } = params
+export default async function CheckoutPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -134,7 +134,7 @@ export default function CheckoutPage({ params }: { params: { id: string } }) {
             <div className="pt-4">
               <p className="font-heading text-center text-lg text-black"><span className="font-bold">Subtotal</span> : Rp 250.000</p>
               <div className="mt-4 flex flex-col items-stretch gap-3">
-                <a href="#" className="inline-flex items-center justify-center rounded-none border border-black px-4 py-2 font-body text-sm text-black hover:bg-black hover:text-white transition w-full">Lihat Detail</a>
+                <a href="#" className="inline-flex items-center justify-center rounded-none border border-black bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition w-full">Checkout</a>
                 <a href="#" className="inline-flex items-center justify-center rounded-none bg-black px-4 py-2 font-body text-sm text-white hover:opacity-90 transition w-full">Checkout</a>
               </div>
             </div>

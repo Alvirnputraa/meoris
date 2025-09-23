@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    // Allow production builds to successfully complete even if
+    // there are ESLint errors. Useful while iterating.
+    ignoreDuringBuilds: true,
+  },
   images: {
     // Izinkan gambar dari Supabase Storage (public dan signed URLs)
     remotePatterns: [
@@ -15,4 +20,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useCart } from '@/lib/useCart'
 import { useFavorites } from '@/lib/useFavorites'
-import { keranjangDb, voucherDb, praCheckoutDb } from '@/lib/database'
+import { keranjangDb, voucherDb, praCheckoutDb, produkDb } from '@/lib/database'
 
 export default function CartDetailPage() {
   const { user, isLoading } = useAuth()
@@ -17,6 +17,9 @@ export default function CartDetailPage() {
   const [isFavOpen, setIsFavOpen] = useState(false)
   const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set())
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
   const [voucherCode, setVoucherCode] = useState('')
   const [appliedVoucher, setAppliedVoucher] = useState<any>(null)
   const [voucherError, setVoucherError] = useState('')
@@ -63,6 +66,27 @@ export default function CartDetailPage() {
     } finally {
       setRemovingId(null)
     }
+  }
+
+  // Search handlers (functional search sidebar)
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return
+    setSearchLoading(true)
+    try {
+      const results = await produkDb.search(searchQuery.trim())
+      setSearchResults(results || [])
+    } catch (error) {
+      console.error('Error searching products:', error)
+      setSearchResults([])
+    } finally {
+      setSearchLoading(false)
+    }
+  }
+
+  const handleCloseSearchSidebar = () => {
+    setIsSearchOpen(false)
+    setSearchQuery('')
+    setSearchResults([])
   }
 
   const handleApplyVoucher = async () => {
@@ -184,33 +208,62 @@ export default function CartDetailPage() {
       {/* Right panels: Search, Cart, Favorite */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[70]">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setIsSearchOpen(false)} aria-hidden="true" />
+          <div className="absolute inset-0 bg-black/40" onClick={handleCloseSearchSidebar} aria-hidden="true" />
           <aside className="absolute right-0 top-0 h-full w-80 md:w-96 max-w-[92%] bg-white shadow-2xl p-6 flex flex-col">
-            <button type="button" aria-label="Tutup pencarian" className="absolute -left-12 top-6 w-14 h-10 bg-white rounded-l-lg rounded-r-none text-black flex items-center justify-center" onClick={() => setIsSearchOpen(false)}>
+            <button type="button" aria-label="Tutup pencarian" className="absolute -left-12 top-6 w-14 h-10 bg-white rounded-l-lg rounded-r-none text-black flex items-center justify-center" onClick={handleCloseSearchSidebar}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             <div className="flex items-center justify-between">
               <span className="font-heading text-xl md:text-2xl text-black">Cari Produk</span>
             </div>
             <div className="mt-6">
-              <input type="text" placeholder="Cari produk" className="w-full rounded-none border border-gray-300 px-4 py-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40" />
+              <input
+                type="text"
+                placeholder="Cari produk"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                className="w-full rounded-none border border-gray-300 px-4 py-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/40"
+              />
               <div className="mt-3">
-                <button className="w-full rounded-none bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition">Cari</button>
+                <button
+                  onClick={handleSearch}
+                  disabled={searchLoading || !searchQuery.trim()}
+                  className="w-full rounded-none bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition disabled:opacity-50"
+                >
+                  {searchLoading ? 'Mencari...' : 'Cari'}
+                </button>
               </div>
             </div>
             <div className="mt-6">
               <p className="font-heading text-black">Hasil pencarian</p>
             </div>
             <div className="mt-4 flex-1 overflow-y-auto space-y-5">
-              <div className="flex items-center gap-4">
-                <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
-                  <Image src="/images/test1p.png" alt="Hasil produk" fill sizes="64px" className="object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-gray-900 truncate">Nama Produk Contoh</p>
-                  <p className="font-body text-sm text-gray-700 mt-1">Rp 250.000</p>
-                </div>
-              </div>
+              {searchLoading ? (
+                <p className="text-sm text-gray-600">Mencari produk...</p>
+              ) : searchResults.length > 0 ? (
+                searchResults.map((product: any) => (
+                  <Link key={product.id} href={`/produk/${product.id}/detail`} className="flex items-center gap-4 hover:bg-gray-50 p-2 rounded cursor-pointer">
+                    <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
+                      {product.photo1 ? (
+                        <Image src={product.photo1} alt={product.nama_produk} fill sizes="64px" className="object-cover" />
+                      ) : (
+                        <Image src="/images/test1p.png" alt="Produk" fill sizes="64px" className="object-cover" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body text-gray-900 truncate">{product.nama_produk}</p>
+                      <p className="font-body text-sm text-gray-700 mt-1">
+                        Rp {Number(product.harga || 0).toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                  </Link>
+                ))
+              ) : searchQuery ? (
+                <p className="text-sm text-gray-600">Tidak ada hasil untuk "{searchQuery}"</p>
+              ) : (
+                <p className="text-sm text-gray-600">Masukkan kata kunci untuk mencari produk</p>
+              )}
             </div>
           </aside>
         </div>
@@ -262,15 +315,6 @@ export default function CartDetailPage() {
             <div className="pt-4">
               <p className="font-heading text-center text-lg text-black"><span className="font-bold">Subtotal</span> : Rp {viewItems.reduce((sum, it:any) => sum + (Number(it.produk?.harga || 0) * Number(it.quantity || 1)), 0).toLocaleString('id-ID')}</p>
               <div className="mt-4 flex flex-col items-stretch gap-3">
-                <Link
-                  href="/produk/detail-checkout"
-                  className="inline-flex items-center justify-center rounded-none border border-black px-4 py-2 font-body text-sm text-black hover:bg-black hover:text-white transition w-full"
-                  onClick={() => {
-                    setIsCartOpen(false);
-                  }}
-                >
-                  Lihat Detail
-                </Link>
                 <Link href="/produk/checkout" className="inline-flex items-center justify-center rounded-none bg-black px-4 py-2 font-body text-sm text-white hover:opacity-90 transition w-full">
                   Checkout
                 </Link>
@@ -343,29 +387,29 @@ export default function CartDetailPage() {
 
       {/* Desktop header */}
       <div className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-        <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-5">
+        <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-3">
           <div className="flex items-center gap-2">
             <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black" onClick={() => setIsSidebarOpen(true)}>
-              <Image src="/images/sidebar.png" alt="Menu" width={40} height={40} />
+              <Image src="/images/sidebar.png" alt="Menu" width={28} height={28} />
             </button>
             <Link href="/" aria-label="Meoris beranda" className="select-none">
-              <span className="font-heading font-bold text-3xl tracking-wide text-black">MEORIS</span>
+              <span className="font-heading font-bold text-2xl tracking-wide text-black">MEORIS</span>
             </Link>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
             <a href="#" aria-label="Cari" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
-              <Image src="/images/search.png" alt="Search" width={36} height={36} />
+              <Image src="/images/search.png" alt="Search" width={28} height={28} />
             </a>
             <a href="#" aria-label="Favorit" className="relative" onClick={(e) => { e.preventDefault(); setIsFavOpen(true); }}>
-              <Image src="/images/favorit.png" alt="Favorit" width={36} height={36} />
+              <Image src="/images/favorit.png" alt="Favorit" width={28} height={28} />
               <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{favoritesCount}</span>
             </a>
             <a href="#" aria-label="Keranjang" className="relative" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
-              <Image src="/images/cart.png" alt="Cart" width={36} height={36} />
+              <Image src="/images/cart.png" alt="Cart" width={28} height={28} />
               <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
             </a>
             <Link href="/my-account" aria-label="Akun">
-              <Image src="/images/user.png" alt="User" width={36} height={36} />
+              <Image src="/images/user.png" alt="User" width={28} height={28} />
             </Link>
           </div>
         </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 import { userDb } from '@/lib/database'
 // import ReCAPTCHA from 'react-google-recaptcha' // Commented out for testing
@@ -175,8 +176,16 @@ export default function SignupPage() {
           </div>
         </div>
 
-        {/* Right: 45% gray */}
-        <div className="hidden md:block bg-gray-100" />
+        {/* Right: 45% poster image (desktop only) */}
+        <div className="hidden md:block relative min-h-screen">
+          <Image
+            src="/images/poslogreg.png"
+            alt="Signup poster"
+            fill
+            sizes="(min-width: 768px) 45vw, 0"
+            className="object-cover"
+          />
+        </div>
       </section>
     </main>
   )

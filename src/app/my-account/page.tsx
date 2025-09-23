@@ -6,11 +6,11 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useCart } from '@/lib/useCart'
 import { useFavorites } from '@/lib/useFavorites'
-import { useEffect, useState as useStateReact } from 'react'
+import { useEffect, useState as useStateReact, Suspense } from 'react'
 import { keranjangDb, produkDb } from '@/lib/database'
 
-export default function MyAccountPage() {
-  const { user, logout } = useAuth()
+function AccountContent() {
+  const { user, logout, isLoading } = useAuth()
   const router = useRouter()
   const sp = useSearchParams()
   const tab = ((sp?.get('tab') || 'detail') as 'detail' | 'alamat')
@@ -80,6 +80,8 @@ export default function MyAccountPage() {
     }
   }, [isCartOpen, user, refresh])
 
+  // Sticky header removed on this page
+
   const handleRemoveCartItem = async (itemId: string) => {
     try {
       setRemovingId(itemId)
@@ -104,19 +106,20 @@ export default function MyAccountPage() {
       console.error('Logout error:', error)
     }
   }
-  // If user is not logged in, redirect to login
+  // If user is not logged in, redirect to login (wait until auth finished loading)
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !user) {
       router.replace('/login')
     }
-  }, [user, router])
+  }, [isLoading, user, router])
 
-  if (!user) {
-    return null // Show nothing while redirecting
+  if (isLoading || !user) {
+    return null // Show nothing while determining auth or redirecting
   }
 
   return (
     <main>
+      
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[70]">
           <div
@@ -280,16 +283,13 @@ export default function MyAccountPage() {
               <div className="mt-4 flex flex-col items-stretch gap-3">
                 <Link
                   href="/produk/detail-checkout"
-                  className="inline-flex items-center justify-center rounded-none border border-black px-4 py-2 font-body text-sm text-black hover:bg-black hover:text-white transition w-full"
+                  className="inline-flex items-center justify-center rounded-none border border-black bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition w-full"
                   onClick={() => {
                     setIsCartOpen(false);
                   }}
                 >
-                  Lihat Detail
-                </Link>
-                <a href="#" className="inline-flex items-center justify-center rounded-none bg-black px-4 py-2 font-body text-sm text-white hover:opacity-90 transition w-full">
                   Checkout
-                </a>
+                </Link>
               </div>
             </div>
           </aside>
@@ -356,27 +356,27 @@ export default function MyAccountPage() {
           </aside>
         </div>
       )}
-      {/* Desktop header */}
-      <div className="hidden md:flex bg-white border-b border-gray-200">
-        <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-5">
+      {/* Desktop header (fixed) */}
+      <div className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+        <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-3">
           <div className="flex items-center gap-2">
             <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-pointer" onClick={() => setIsSidebarOpen(true)}>
-              <Image src="/images/sidebar.png" alt="Menu" width={40} height={40} />
+              <Image src="/images/sidebar.png" alt="Menu" width={28} height={28} />
             </button>
             <Link href="/" aria-label="Meoris beranda" className="select-none">
-              <span className="font-heading font-bold text-3xl tracking-wide text-black">MEORIS</span>
+              <span className="font-heading font-bold text-2xl tracking-wide text-black">MEORIS</span>
             </Link>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
             <a href="#" aria-label="Cari" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
-              <Image src="/images/search.png" alt="Search" width={36} height={36} />
+              <Image src="/images/search.png" alt="Search" width={28} height={28} />
             </a>
             <a href="#" aria-label="Favorit" className="relative" onClick={(e) => { e.preventDefault(); setIsFavOpen(true); }}>
-              <Image src="/images/favorit.png" alt="Favorit" width={36} height={36} />
+              <Image src="/images/favorit.png" alt="Favorit" width={28} height={28} />
               <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{favoritesCount}</span>
             </a>
             <a href="#" aria-label="Keranjang" className="relative" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
-              <Image src="/images/cart.png" alt="Cart" width={36} height={36} />
+              <Image src="/images/cart.png" alt="Cart" width={28} height={28} />
               <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
             </a>
             <Link href="/my-account" aria-label="Akun">
@@ -385,8 +385,8 @@ export default function MyAccountPage() {
           </div>
         </div>
       </div>
-      {/* Mobile header */}
-      <div className="md:hidden bg-white border-b border-gray-200">
+      {/* Mobile header (fixed) */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
         <div className="flex items-center justify-between px-5 py-4">
           <div className="flex items-center gap-2">
             <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-pointer" onClick={() => setIsSidebarOpen(true)}>
@@ -415,7 +415,7 @@ export default function MyAccountPage() {
         </div>
       </div>
       {/* Hero with title + breadcrumb */}
-      <section className="relative overflow-hidden bg-transparent">
+      <section className="relative overflow-hidden bg-transparent pt-[60px] md:pt-[76px]">
         {/* Background image with fixed effect */}
         <div
           className="absolute inset-0 -z-10 bg-center bg-cover bg-fixed"
@@ -659,4 +659,10 @@ export default function MyAccountPage() {
   )
 }
 
-
+export default function MyAccountPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AccountContent />
+    </Suspense>
+  );
+}

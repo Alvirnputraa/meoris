@@ -18,7 +18,8 @@ function slugToTab(slug: string): Tab {
   }
 }
 
-export default function DocsSlugPage({ params }: { params: { slug: string } }) {
-  const initialActive = slugToTab(params.slug)
+export default async function DocsSlugPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const initialActive = slugToTab(slug)
   return <DocsPage initialActive={initialActive} />
 }

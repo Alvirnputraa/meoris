@@ -255,16 +255,13 @@ export default function DocsPage({ initialActive }: { initialActive?: 'terms' | 
               <div className="mt-4 flex flex-col items-stretch gap-3">
                 <Link
                   href="/produk/detail-checkout"
-                  className="inline-flex items-center justify-center rounded-none border border-black px-4 py-2 font-body text-sm text-black hover:bg-black hover:text-white transition w-full"
+                  className="inline-flex items-center justify-center rounded-none border border-black bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition w-full"
                   onClick={() => {
                     setIsCartOpen(false);
                   }}
                 >
-                  Lihat Detail
-                </Link>
-                <a href="#" className="inline-flex items-center justify-center rounded-none bg-black px-4 py-2 font-body text-sm text-white hover:opacity-90 transition w-full">
                   Checkout
-                </a>
+                </Link>
               </div>
             </div>
           </aside>
@@ -323,29 +320,29 @@ export default function DocsPage({ initialActive }: { initialActive?: 'terms' | 
 
       {/* Desktop header */}
       <div className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-        <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-5">
+        <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-3">
           <div className="flex items-center gap-2">
             <button type="button" aria-label="Buka menu" className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black" onClick={() => setIsSidebarOpen(true)}>
-              <Image src="/images/sidebar.png" alt="Menu" width={40} height={40} />
+              <Image src="/images/sidebar.png" alt="Menu" width={28} height={28} />
             </button>
             <Link href="/" aria-label="Meoris beranda" className="select-none">
-              <span className="font-heading font-bold text-3xl tracking-wide text-black">MEORIS</span>
+              <span className="font-heading font-bold text-2xl tracking-wide text-black">MEORIS</span>
             </Link>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
             <a href="#" aria-label="Cari" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
-              <Image src="/images/search.png" alt="Search" width={36} height={36} />
+              <Image src="/images/search.png" alt="Search" width={28} height={28} />
             </a>
             <a href="#" aria-label="Favorit" className="relative" onClick={(e) => { e.preventDefault(); setIsFavOpen(true); }}>
-              <Image src="/images/favorit.png" alt="Favorit" width={36} height={36} />
+              <Image src="/images/favorit.png" alt="Favorit" width={28} height={28} />
               <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{favoritesCount}</span>
             </a>
             <a href="#" aria-label="Keranjang" className="relative" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
-              <Image src="/images/cart.png" alt="Cart" width={36} height={36} />
+              <Image src="/images/cart.png" alt="Cart" width={28} height={28} />
               <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
             </a>
             <Link href="/my-account" aria-label="Akun">
-              <Image src="/images/user.png" alt="User" width={36} height={36} />
+              <Image src="/images/user.png" alt="User" width={28} height={28} />
             </Link>
           </div>
         </div>
@@ -733,5 +730,3 @@ export default function DocsPage({ initialActive }: { initialActive?: 'terms' | 
     </main>
   )
 }
-
-

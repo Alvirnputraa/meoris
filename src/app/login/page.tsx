@@ -2,7 +2,7 @@
 import Image from 'next/image'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { auth } from '@/lib/auth'
+import { useAuth } from '@/lib/auth-context'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,7 +18,7 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      await auth.login(email, password)
+      await login(email, password)
       router.push('/') // Redirect to home after successful login
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
@@ -27,7 +28,7 @@ export default function LoginPage() {
   }
   return (
     <main>
-      <section className="min-h-screen grid grid-cols-1 md:grid-cols-[60%_40%]">
+      <section className="min-h-screen grid grid-cols-1 md:grid-cols-[55%_45%]">
         {/* Left: 60% white with brand on top-left and centered login content */}
         <div className="bg-white flex flex-col min-h-screen">
           {/* Brand (top-left), same style as footer */}
@@ -159,8 +160,16 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Right: 40% gray */}
-        <div className="hidden md:block bg-gray-100" />
+        {/* Right: 40% poster image */}
+        <div className="hidden md:block relative min-h-screen">
+          <Image
+            src="/images/poslogreg.png"
+            alt="Login poster"
+            fill
+            sizes="(min-width: 768px) 45vw, 0"
+            className="object-cover"
+          />
+        </div>
       </section>
     </main>
   );

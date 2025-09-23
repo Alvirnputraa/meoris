@@ -347,38 +347,40 @@ export default function Page() {
             <div className="flex items-center justify-between">
               <span className="font-heading text-xl md:text-2xl text-black">Item Keranjang</span>
             </div>
-            <div className="mt-6 flex-1 overflow-y-auto space-y-5">
-              {homeCartLoading && (!homeCartItems || homeCartItems.length === 0) ? (
-                <p className="text-sm text-gray-600">Memuat keranjang...</p>
-              ) : (!homeCartItems || homeCartItems.length === 0) ? (
-                <p className="text-sm text-gray-600">Keranjang kosong</p>
-              ) : (
-                homeCartItems.map((item: any) => (
-                  <div key={item.id} className="flex items-center gap-4">
-                    <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
-                      {item.produk?.photo1 ? (
-                        <Image src={item.produk.photo1} alt={item.produk?.nama_produk || "Produk"} fill sizes="64px" className="object-cover" />
-                      ) : (
-                        <Image src="/images/test1p.png" alt="Produk" fill sizes="64px" className="object-cover" />
-                      )}
+            <div className="mt-6 flex-1 overflow-y-auto">
+              <div className="space-y-5">
+                {homeCartLoading && (!homeCartItems || homeCartItems.length === 0) ? (
+                  <p className="text-sm text-gray-600">Memuat keranjang...</p>
+                ) : (!homeCartItems || homeCartItems.length === 0) ? (
+                  <p className="text-sm text-gray-600">Keranjang kosong</p>
+                ) : (
+                  homeCartItems.map((item: any) => (
+                    <div key={item.id} className="flex items-center gap-4">
+                      <div className="relative w-16 h-16 overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
+                        {item.produk?.photo1 ? (
+                          <Image src={item.produk.photo1} alt={item.produk?.nama_produk || "Produk"} fill sizes="64px" className="object-cover" />
+                        ) : (
+                          <Image src="/images/test1p.png" alt="Produk" fill sizes="64px" className="object-cover" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-body text-gray-900 truncate">{item.produk?.nama_produk || "Produk"}</p>
+                        <p className="font-body text-sm text-gray-700 mt-1"><span className="text-black">{item.quantity} x</span> Rp {Number(item.produk?.harga || 0).toLocaleString("id-ID")} {item.size ? <span className="ml-2 text-gray-500">Uk: {item.size}</span> : null}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-gray-900 truncate">{item.produk?.nama_produk || "Produk"}</p>
-                      <p className="font-body text-sm text-gray-700 mt-1"><span className="text-black">{item.quantity} x</span> Rp {Number(item.produk?.harga || 0).toLocaleString("id-ID")} {item.size ? <span className="ml-2 text-gray-500">Uk: {item.size}</span> : null}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))
+                )}
+              </div>
               {/* Subtotal + actions */}
-              <div className="mt-4">
+              <div className="mt-2">
                 <p className="font-heading text-center text-lg text-black"><span className="font-bold">Subtotal</span> : Rp {homeCartItems?.reduce((sum:any, it:any) => sum + (Number(it.produk?.harga || 0) * Number(it.quantity || 1)), 0).toLocaleString("id-ID")}</p>
                 <div className="mt-4">
-                  <Link href="/produk/detail-checkout" className="inline-flex items-center justify-center rounded-none border border-black px-4 py-2 font-body text-sm text-black hover:bg-black hover:text-white transition w-full">
-                    Lihat Detail
+                  <Link href="/produk/detail-checkout" className="inline-flex items-center justify-center rounded-none border border-black bg-black text-white px-4 py-2 font-body text-sm hover:opacity-90 transition w-full">
+                    Checkout
                   </Link>
                 </div>
               </div>
+            </div>
           </aside>
         </div>
       )}
@@ -448,7 +450,7 @@ export default function Page() {
       {/* Sticky header (desktop) */}
       {showSticky && (
         <div className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200">
-          <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-5">
+          <div className="w-full flex items-center justify-between px-6 md:px-8 lg:px-10 py-3">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -456,26 +458,26 @@ export default function Page() {
                 className="p-1 rounded hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-black cursor-pointer"
                 onClick={() => setIsSidebarOpen(true)}
               >
-                <Image src="/images/sidebar.png" alt="Menu" width={40} height={40} />
+                <Image src="/images/sidebar.png" alt="Menu" width={28} height={28} />
               </button>
               <a href="/" aria-label="Meoris beranda" className="select-none">
-                <span className="font-heading font-bold text-3xl tracking-wide text-black">MEORIS</span>
+                <span className="font-heading font-bold text-2xl tracking-wide text-black">MEORIS</span>
               </a>
             </div>
-            <div className="flex items-center gap-5">
+            <div className="flex items-center gap-4">
               <a href="#" aria-label="Cari" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
-                <Image src="/images/search.png" alt="Search" width={36} height={36} />
+                <Image src="/images/search.png" alt="Search" width={28} height={28} />
               </a>
               <a href="#" aria-label="Favorit" className="relative" onClick={(e) => { e.preventDefault(); setIsFavOpen(true); }}>
-                <Image src="/images/favorit.png" alt="Favorit" width={36} height={36} />
+                <Image src="/images/favorit.png" alt="Favorit" width={28} height={28} />
                 <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{favoritesCount}</span>
               </a>
               <a href="#" aria-label="Keranjang" className="relative" onClick={(e) => { e.preventDefault(); setIsCartOpen(true); }}>
-                <Image src="/images/cart.png" alt="Cart" width={36} height={36} />
+                <Image src="/images/cart.png" alt="Cart" width={28} height={28} />
                 <span className="absolute -top-2 -right-2 min-w-4 h-4 px-1 rounded-full bg-black text-white text-[10px] leading-4 text-center">{cartCount}</span>
               </a>
               <a href={user ? "/my-account" : "/login"} aria-label="Akun">
-                <Image src="/images/user.png" alt="User" width={36} height={36} />
+                <Image src="/images/user.png" alt="User" width={28} height={28} />
               </a>
             </div>
           </div>
@@ -518,7 +520,7 @@ export default function Page() {
           </div>
         </div>
         {/* Mobile header: MEORIS left, icons right */}
-        <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+        <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white md:bg-white/95 md:backdrop-blur-sm border-b border-gray-200 transform-gpu">
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-2">
               <button
@@ -816,24 +818,28 @@ export default function Page() {
           }}
           data-route="/home"
         >
-          <div className="flex flex-col items-center gap-6 mt-8">
-            {/* Poster besar di atas */}
-            <div className="relative overflow-hidden border border-gray-200 bg-gray-100 aspect-square w-full max-w-[340px] md:max-w-[420px] reveal-on-scroll" data-reveal style={{ transitionDelay: '60ms' }}>
-              <Image
-                src="/images/poster.png"
-                alt="Poster koleksi"
-                fill
-                sizes="(min-width: 640px) 420px, 90vw"
-                className="object-cover"
-              />
+          <div className="mt-8 flex flex-col gap-6 md:grid md:grid-cols-2 md:gap-10">
+            {/* Kiri (md): poster besar, Mobile: tetap atas */}
+            <div className="flex items-center justify-center md:justify-end">
+              <div className="relative overflow-hidden border border-gray-200 bg-gray-100 aspect-square w-full max-w-[340px] md:w-[80%] md:max-w-[680px] reveal-on-scroll" data-reveal style={{ transitionDelay: '60ms' }}>
+                <Image
+                  src="/images/poster.png"
+                  alt="Poster koleksi"
+                  fill
+                  sizes="(min-width: 1280px) 30vw, (min-width: 1024px) 35vw, (min-width: 640px) 420px, 90vw"
+                  className="object-cover"
+                />
+              </div>
             </div>
 
-            {/* Empat kotak (2x2) horizontal di mobile */}
-            <div className="w-full max-w-[340px] md:max-w-[420px] grid grid-cols-2 gap-4">
-              <div className="border border-gray-200 bg-gray-100 aspect-square w-full reveal-on-scroll" data-reveal style={{ transitionDelay: '120ms' }}></div>
-              <div className="border border-gray-200 bg-gray-100 aspect-square w-full reveal-on-scroll" data-reveal style={{ transitionDelay: '180ms' }}></div>
-              <div className="border border-gray-200 bg-gray-100 aspect-square w-full reveal-on-scroll" data-reveal style={{ transitionDelay: '240ms' }}></div>
-              <div className="border border-gray-200 bg-gray-100 aspect-square w-full reveal-on-scroll" data-reveal style={{ transitionDelay: '300ms' }}></div>
+            {/* Kanan (md): 4 kotak; Mobile: tetap di bawah poster */}
+            <div className="flex items-center justify-center md:justify-start">
+              <div className="w-full max-w-[340px] md:w-[75%] md:max-w-[720px] grid grid-cols-2 gap-4 md:gap-6">
+                <div className="border border-gray-200 bg-gray-100 aspect-square w-full reveal-on-scroll" data-reveal style={{ transitionDelay: '120ms' }}></div>
+                <div className="border border-gray-200 bg-gray-100 aspect-square w-full reveal-on-scroll" data-reveal style={{ transitionDelay: '180ms' }}></div>
+                <div className="border border-gray-200 bg-gray-100 aspect-square w-full reveal-on-scroll" data-reveal style={{ transitionDelay: '240ms' }}></div>
+                <div className="border border-gray-200 bg-gray-100 aspect-square w-full reveal-on-scroll" data-reveal style={{ transitionDelay: '300ms' }}></div>
+              </div>
             </div>
           </div>
         </section>
@@ -1109,7 +1115,7 @@ export default function Page() {
           </div>
         </section>
         {/* Section 6: Scroll Test (Transparent with background image) */}
-        <section className="relative overflow-hidden bg-transparent py-16" data-route="/home">
+        <section className="relative overflow-hidden bg-transparent py-16 md:py-6 lg:py-16" data-route="/home">
           {/* Background image layer behind for cool scrolling effect */}
           <div
             className="absolute inset-0 -z-10 bg-center bg-cover bg-fixed"
@@ -1117,7 +1123,7 @@ export default function Page() {
             style={{ backgroundImage: "url(/images/bgg.png)" }}
           />
           <div className="max-w-7xl mx-auto px-6 md:px-8">
-            <div className="h-[35vh] flex items-center justify-start">
+            <div className="h-[35vh] md:h-[18vh] lg:h-[35vh] flex items-center justify-start">
               <div className="w-full sm:w-[80%] md:w-[60%] lg:w-[48%] max-w-xl">
                 <h3 className="font-heading text-2xl md:text-3xl lg:text-4xl text-black">Kabar Spesial!</h3>
                 <p className="font-body text-sm md:text-base text-gray-800 mt-3">

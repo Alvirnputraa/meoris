@@ -53,6 +53,9 @@ export const auth = {
   // Get current user
   getCurrentUser(): AuthUser | null {
     try {
+      if (typeof window === 'undefined') {
+        return null
+      }
       const userStr = localStorage.getItem('user')
       return userStr ? JSON.parse(userStr) : null
     } catch (error) {
